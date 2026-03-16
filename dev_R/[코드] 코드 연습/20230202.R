@@ -1,4 +1,11 @@
+install.packages("tidyverse")
+library(tidyverse)
+
 z <- c(1,2,NA,4,5,NA,9)
+
+z
+print(z)
+
 
 is.na(z)
 sum(is.na(z))
