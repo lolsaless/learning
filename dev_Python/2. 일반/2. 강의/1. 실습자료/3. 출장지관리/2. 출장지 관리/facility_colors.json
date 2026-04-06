@@ -1,0 +1,18 @@
+{
+  "학원": "blue",
+  "지하역사": "gray",
+  "장례식장": "white",
+  "인터넷컴퓨터게임시설제공업의영업시설": "red",
+  "의료기관": "green",
+  "영화상영관": "yellow",
+  "업무시설": "purple",
+  "어린이집": "orange",
+  "실내주차장": "brown",
+  "실내어린이놀이시설": "pink",
+  "산후조리원": "lightblue",
+  "박물관": "beige",
+  "목욕장업의 영업시설": "cadetblue",
+  "도서관": "darkblue",
+  "대규모 점포": "darkpurple",
+  "노인요양시설": "lightgreen"
+}
