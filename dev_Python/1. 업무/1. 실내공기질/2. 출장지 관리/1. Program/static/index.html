@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>실내공기질 출장지 관리</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <header>
+      <h1>출장지 관리</h1>
+      <div id="overallProgress" class="progress-block">
+        <div class="progress-label">
+          <span>전체 진행률</span>
+          <span id="overallText">0 / 0</span>
+        </div>
+        <div class="progress-bar"><div id="overallBar" class="progress-fill"></div></div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <input id="searchInput" type="text" placeholder="시설명 또는 주소 검색" />
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">시군</div>
+      <select id="regionSelect">
+        <option value="">전체</option>
+      </select>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        시설군
+        <button id="facilityToggle" class="link-btn">전체 선택/해제</button>
+      </div>
+      <div id="facilityList" class="checkbox-list"></div>
+    </section>
+
+    <section class="panel">
+      <label class="checkbox-row">
+        <input type="checkbox" id="hideDone" />
+        완료된 항목 숨기기
+      </label>
+    </section>
+
+    <section class="panel" id="regionSummary">
+      <div class="panel-title">시군별 진행 상황</div>
+      <div id="regionList" class="region-list"></div>
+    </section>
+  </aside>
+
+  <main id="mapWrap">
+    <div id="map"></div>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
