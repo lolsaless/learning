@@ -1,0 +1,40 @@
+{
+  "name": "indoor-air-quality-report",
+  "version": "1.0.0",
+  "description": "실내공기질 실적 정리 데스크톱 프로그램",
+  "main": "./build/electron/main.js",
+  "scripts": {
+    "sync": "python build.py --sync-only",
+    "dump": "python build.py --sync-only && dump-stlite-desktop-artifacts",
+    "preview": "npm run dump && cross-env NODE_ENV=production electron .",
+    "dist": "npm run dump && electron-builder --win"
+  },
+  "build": {
+    "appId": "kr.go.indoorAirQuality.report",
+    "productName": "실내공기질 실적 정리",
+    "files": ["build/**/*"],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "IndoorAirQualityReport-${version}-Setup.${ext}"
+    }
+  },
+  "stlite": {
+    "desktop": {
+      "files": ["stlite_src/app.py", "stlite_src/src/*.py"],
+      "entrypoint": "stlite_src/app.py",
+      "dependencies": ["pandas", "openpyxl"],
+      "embed": true,
+      "appMenu": false
+    }
+  },
+  "devDependencies": {
+    "@stlite/desktop": "0.102.1",
+    "cross-env": "10.1.0",
+    "electron": "44.4.2",
+    "electron-builder": "26.15.3"
+  }
+}

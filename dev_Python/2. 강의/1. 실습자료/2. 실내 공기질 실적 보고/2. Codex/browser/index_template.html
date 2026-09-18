@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>실내공기질 데이터 처리</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.1/build/stlite.css"
+    />
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; }
+      #loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-family: sans-serif;
+        font-size: 1.1rem;
+        color: #444;
+        text-align: center;
+        padding: 0 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading">
+      ⏳ 앱을 불러오는 중입니다... (처음 실행 시 10~30초 정도 걸릴 수 있습니다)
+    </div>
+    <div id="root"></div>
+
+    <script type="module">
+      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.9.1/build/stlite.js";
+
+      const appFiles = __APP_FILES_JSON__;
+
+      try {
+        await mount(
+          {
+            requirements: ["pandas", "openpyxl"],
+            entrypoint: "app.py",
+            files: appFiles,
+            streamlitConfig: { "client.toolbarMode": "viewer" },
+          },
+          document.getElementById("root")
+        );
+        document.getElementById("loading").remove();
+      } catch (error) {
+        console.error(error);
+        document.getElementById("loading").textContent =
+          "앱을 불러오지 못했습니다. 인터넷 연결 후 새로고침해주세요.";
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+name: Build indoor air quality desktop app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)/**"
+      - ".github/workflows/indoor-air-quality-desktop.yml"
+
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)/requirements.txt"
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build browser file
+        run: python browser/build.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install desktop build dependencies
+        working-directory: "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)/desktop"
+        run: npm install
+
+      - name: Build Windows installer
+        working-directory: "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)/desktop"
+        run: npm run dist
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: indoor-air-quality-windows-installer
+          path: "dev_Python/2. 강의/1. 실습자료/2. 실내 공기질 실적 보고/2. 프로그램(streamlit)/desktop/dist/*.exe"
+          if-no-files-found: error
