@@ -1,0 +1,13 @@
+이 폴더에 아래 구조로 파일을 넣은 뒤 build_windows.bat 를 실행하세요.
+자세한 다운로드 안내는 상위 폴더의 README.md > "Windows 바이너리 준비" 항목을 참고하세요.
+
+bin/windows/
+├── tesseract.exe                (+ 같이 딸려오는 모든 .dll 파일)
+├── tessdata/
+│   └── eng.traineddata
+└── poppler/
+    ├── pdftoppm.exe
+    ├── pdfinfo.exe
+    └── (같이 딸려오는 모든 .dll 파일)
+
+준비가 끝나면 이 안내 파일은 지워도 됩니다.

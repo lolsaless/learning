@@ -1,0 +1,12 @@
+pytesseract>=0.3.10
+opencv-python>=4.8
+pillow>=10.0
+pdf2image>=1.16
+numpy>=1.24
+reportlab>=4.0
+
+# 시스템 패키지(별도 설치 필요, pip 설치 불가):
+#   - tesseract-ocr        (OCR 엔진)  예) apt install tesseract-ocr
+#   - poppler-utils        (PDF -> 이미지 렌더링, pdf2image가 사용) 예) apt install poppler-utils
+#   - (선택) 한글 트루타입 폰트: Windows는 자동으로 맑은 고딕(C:\Windows\Fonts\malgun.ttf)을
+#     사용합니다. Linux에서 폰트 임베딩을 원하면: apt install fonts-nanum

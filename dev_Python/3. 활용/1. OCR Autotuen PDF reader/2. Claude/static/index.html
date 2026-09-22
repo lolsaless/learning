@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GC/MS Autotune 자동 판독</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>GC/MS Autotune 자동 판독</h1>
+    <p class="subtitle">Autotune 리포트(PDF/이미지)를 올리면 자동으로 OCR 판독 후 평가서를 만들어줍니다.</p>
+  </header>
+
+  <main>
+    <section id="dropStage">
+      <div id="dropzone" tabindex="0">
+        <div class="dz-icon">📄</div>
+        <div class="dz-text">
+          <strong>여기로 파일을 끌어다 놓으세요</strong>
+          <span>또는 클릭해서 PDF / PNG / JPG 파일을 선택하세요</span>
+        </div>
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" hidden />
+      </div>
+      <p class="hint">파일은 이 프로그램 안에서만 처리되며 외부로 전송되지 않습니다.</p>
+    </section>
+
+    <section id="loadingStage" class="hidden">
+      <div class="spinner"></div>
+      <p id="loadingText">판독 중입니다... 잠시만 기다려주세요.</p>
+    </section>
+
+    <section id="errorStage" class="hidden">
+      <div class="error-box">
+        <div class="error-title">⚠️ 판독에 실패했습니다</div>
+        <div id="errorMessage" class="error-message"></div>
+      </div>
+      <button id="retryBtn" class="btn">다른 파일로 다시 시도</button>
+    </section>
+
+    <section id="resultStage" class="hidden">
+      <div id="summaryBanner" class="summary-banner">
+        <div class="summary-verdict">
+          종합판정: <span id="overallVerdict"></span>
+        </div>
+        <div id="summaryCounts" class="summary-counts"></div>
+      </div>
+
+      <div class="meta-box">
+        <div><span class="meta-label">파일명</span><span id="metaFile"></span></div>
+        <div><span class="meta-label">장비/타이틀</span><span id="metaTitle"></span></div>
+        <div><span class="meta-label">튠 일시</span><span id="metaTimestamp"></span></div>
+        <div><span class="meta-label">메소드</span><span id="metaMethod"></span></div>
+      </div>
+
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>측정값</th>
+            <th>판정 기준</th>
+            <th>판정</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+
+      <div class="actions">
+        <button id="downloadBtn" class="btn primary">📥 평가서 PDF 다운로드</button>
+        <button id="newBtn" class="btn">새 파일 판독</button>
+      </div>
+
+      <p class="note">
+        ※ '확인필요'는 OCR 인식 신뢰도가 낮거나 물리적으로 불가능한 값이 검출되어
+        자동 판정을 보류한 항목입니다. 원본 리포트와 반드시 대조 확인하세요.
+      </p>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+flask
+pywebview
+pytesseract>=0.3.10
+opencv-python>=4.8
+pillow>=10.0
+pdf2image>=1.16
+numpy>=1.24
+reportlab>=4.0
+pyinstaller
+
+# 시스템 패키지(완전 독립 실행 exe를 만들 때는 bin/windows, bin/mac 폴더에
+# 아래 실행파일들을 직접 넣어야 합니다. 자세한 안내는 README.md 참고.
+#   - tesseract-ocr (OCR 엔진) + eng.traineddata
+#   - poppler(pdftoppm) (PDF -> 이미지 렌더링)
