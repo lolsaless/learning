@@ -1,0 +1,3 @@
+source /Users/mac/Documents/GitHub/Intel_mac/.venv/bin/activate
+cd "/Users/mac/Documents/GitHub/learning/dev_Python/1. 업무/2. 수질환경/1. OCR Autotuen PDF reader"
+python3 gcms_autotune_ocr_eval.py 22092026155431.pdf

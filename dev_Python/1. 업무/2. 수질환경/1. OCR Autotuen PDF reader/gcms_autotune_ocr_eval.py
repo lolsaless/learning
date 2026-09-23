@@ -163,6 +163,33 @@ def crop_frac(img: Image.Image, box_frac):
     return img.crop((int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h)))
 
 
+def find_text_line_bands(gray: np.ndarray, min_height: int = 15,
+                          row_frac: float = 0.03):
+    """가로 방향 투영(row projection)으로 텍스트 줄 구간을 찾는다.
+
+    param_table처럼 2열(좌/우 소표)이 나란히 붙은 표를 한 번에 OCR하면
+    Tesseract가 줄 간격을 잘못 군집화해 특정 행(Ion Focus 등)을 통째로
+    누락시키는 경우가 있다. 표 전체를 한 번에 넘기지 않고, 줄 단위로
+    쪼개어 각각 OCR하면 이 누락이 사라진다는 것을 확인했다.
+    """
+    _, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    row_sums = bw.sum(axis=1)
+    if row_sums.max() == 0:
+        return []
+    threshold = row_sums.max() * row_frac
+    in_band = row_sums > threshold
+    bands, start = [], None
+    for y, flag in enumerate(in_band):
+        if flag and start is None:
+            start = y
+        elif not flag and start is not None:
+            bands.append((start, y))
+            start = None
+    if start is not None:
+        bands.append((start, len(in_band)))
+    return [b for b in bands if b[1] - b[0] >= min_height]
+
+
 def remove_gridlines(gray: np.ndarray) -> np.ndarray:
     """표 격자선을 모폴로지 연산으로 제거해 OCR 누락을 방지한다."""
     _, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -175,11 +202,117 @@ def remove_gridlines(gray: np.ndarray) -> np.ndarray:
     return cv2.bitwise_not(clean)  # 흰 배경 검은 글씨로 복원
 
 
+# param_table에는 쉼표(,)가 들어갈 자리가 없다(값이 전부 소수/정수 하나뿐,
+# 천 단위 구분 쉼표를 쓰는 칸이 없음). 그런데 소수점(.)이 쉼표로 오인식되는
+# 경우가 관찰되어(예: "34.90"->"34,90"), 화이트리스트에서 쉼표를 아예 빼서
+# Tesseract가 마침표 쪽으로 선택하도록 유도한다.
+_PARAM_TABLE_WHITELIST = (
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .-:|/"
+)
+
+
+def ocr_by_line(gray: np.ndarray, psm: int = 7, pad: int = 4,
+                 whitelist: str = None) -> str:
+    """줄 단위로 잘라서 각각 OCR한 뒤 다시 합친다 (행 누락 방지)."""
+    h = gray.shape[0]
+    bands = find_text_line_bands(gray)
+    config = f"--psm {psm}"
+    if whitelist:
+        config += f' -c tessedit_char_whitelist="{whitelist}"'
+    lines = []
+    for y1, y2 in bands:
+        yy1, yy2 = max(0, y1 - pad), min(h, y2 + pad)
+        line_txt = pytesseract.image_to_string(gray[yy1:yy2, :], config=config)
+        lines.append(line_txt.strip())
+    return "\n".join(lines)
+
+
+def find_col_bands(gray_row: np.ndarray, min_width: int = 10,
+                    gap_px: int = 15, col_frac: float = 0.03):
+    """세로 방향 투영(column projection)으로 표의 각 칸(열) 구간을 찾는다."""
+    _, bw = cv2.threshold(gray_row, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    col_sums = bw.sum(axis=0)
+    if col_sums.max() == 0:
+        return []
+    threshold = col_sums.max() * col_frac
+    in_band = col_sums > threshold
+    bands, start, gap = [], None, 0
+    for x, flag in enumerate(in_band):
+        if flag:
+            if start is None:
+                start = x
+            gap = 0
+        elif start is not None:
+            gap += 1
+            if gap > gap_px:
+                bands.append((start, x - gap + 1))
+                start = None
+                gap = 0
+    if start is not None:
+        bands.append((start, len(in_band)))
+    return [b for b in bands if b[1] - b[0] >= min_width]
+
+
+def extract_target_rows_grid(page_img: Image.Image):
+    """Target m/z 표를 행/열 단위 칸으로 나눠 칸마다 개별 OCR한다.
+
+    표 전체(7열 x 3행)를 한 번에 OCR하면 자릿수 하나(예: Actual m/z의
+    69.00 -> 63.00)가 주변 문맥 때문에 오인식되는 경우가 있었다. 같은 칸을
+    "그 줄만" 넉넉한 여백(세로 패딩)을 두고 독립적으로 잘라 숫자 전용
+    화이트리스트로 다시 읽으면 오인식이 사라지는 것을 확인했다. 표 형식이
+    고정 양식이므로(7개 칸: Target/Actual m/z, Abund, Rel Abund, Iso m/z,
+    Iso Abund, Iso Ratio) 칸 수가 어긋나면 신뢰할 수 없다고 보고 빈 리스트를
+    반환해 상위 로직이 기존 방식(정규식)으로 대체하도록 한다.
+    """
+    crop_img = crop_frac(page_img, ROI["target_tbl"])
+    gray = cv2.cvtColor(np.array(crop_img), cv2.COLOR_RGB2GRAY)
+    row_bands = find_text_line_bands(gray)
+    data_bands = row_bands[1:4]  # 헤더 다음 3개 행(target 69/219/502)
+    if len(data_bands) != 3:
+        return []
+
+    y_pad = 22  # 너무 좁게 자르면 숫자가 오인식되는 것을 방지(실측으로 확인)
+    h = gray.shape[0]
+    rows = []
+    for y1, y2 in data_bands:
+        yy1, yy2 = max(0, y1 - y_pad), min(h, y2 + y_pad)
+        row_img = gray[yy1:yy2, :]
+        cols = find_col_bands(row_img)
+        if len(cols) != 7:
+            return []
+        vals = []
+        for x1, x2 in cols:
+            x_pad = 10
+            cell = row_img[:, max(0, x1 - x_pad):x2 + x_pad]
+            txt = pytesseract.image_to_string(
+                cell, config="--psm 7 -c tessedit_char_whitelist=0123456789.,%"
+            ).strip()
+            vals.append(txt)
+        target_mz, actual_mz, abund, rel_abund, iso_mz, iso_abund, iso_ratio = vals
+        try:
+            rows.append({
+                "target_mz": float(target_mz),
+                "actual_mz": float(actual_mz),
+                "abund": float(abund.replace(",", "")),
+                "rel_abund": float(rel_abund.replace("%", "")),
+                "iso_mz": float(iso_mz),
+                "iso_abund": float(iso_abund.replace(",", "")),
+                "iso_ratio": float(iso_ratio.replace("%", "")),
+            })
+        except ValueError:
+            return []
+    return rows
+
+
 def ocr_region(page_img: Image.Image, roi_key: str, psm: int = 6) -> str:
     crop_img = crop_frac(page_img, ROI[roi_key])
     gray = cv2.cvtColor(np.array(crop_img), cv2.COLOR_RGB2GRAY)
     if roi_key == "param_table":
-        gray = remove_gridlines(gray)
+        # 좌/우 소표가 붙어 있는 격자표 -> 통째로 OCR하면 Tesseract가 줄
+        # 간격을 잘못 군집화해 특정 행(Ion Focus 등)을 통째로 누락시킨다.
+        # 격자선을 지운 뒤 줄 단위로 쪼개서 각각 OCR하면 누락이 사라진다.
+        clean = remove_gridlines(gray)
+        return ocr_by_line(clean, psm=7, whitelist=_PARAM_TABLE_WHITELIST)
     return pytesseract.image_to_string(gray, config=f"--psm {psm}")
 
 
@@ -214,7 +347,7 @@ def extract_all_fields(page_img: Image.Image):
 
     # --- 파라미터 표 (격자선 제거 후 OCR) ---
     pt = raw["param_table"]
-    data["repeller"] = _to_float(_search(r"Repel\w*\D+([\d]+\.?\d*)", pt))
+    data["repeller"] = _to_float(_search(r"Repe\w*\s*l\w*\D+([\d]+\.?\d*)", pt))
     data["ion_focus"] = _to_float(_search(r"[IJi][oc0]n\s*Focus\D+([\d]+\.?\d*)", pt))
     data["em_volts"] = _to_float(_search(r"EM\s*Vo[l1]ts?\D+([\d,]+\.?\d*)", pt))
 
@@ -238,25 +371,24 @@ def extract_all_fields(page_img: Image.Image):
 
     # --- Target m/z 표 (mass 배정 / Rel Abund / Isotope Ratio) ---
     tt = raw["target_tbl"]
-    rows = re.findall(
-        r"(\d{2,3}\.\d{2})\s+(\d{2,3}\.\d{2})\s+([\d,]+)\s+(\d{1,3}\.\d)%\s+"
-        r"(\d{2,3}\.\d{2})\s+([\d,]+)\s+(\d{1,3}\.\d)%", tt)
-    target_rows = []
-    for target_mz, actual_mz, abund, rel_abund, iso_mz, iso_abund, iso_ratio in rows:
-        target_rows.append({
-            "target_mz": float(target_mz),
-            "actual_mz": float(actual_mz),
-            "abund": float(abund.replace(",", "")),
-            "rel_abund": float(rel_abund),
-            "iso_mz": float(iso_mz),
-            "iso_abund": float(iso_abund.replace(",", "")),
-            "iso_ratio": float(iso_ratio),
-        })
+    target_rows = extract_target_rows_grid(page_img)
+    if not target_rows:
+        # 칸 단위 추출이 표 형식과 어긋나면(스캔 상태 등) 기존 정규식 방식으로 대체
+        rows = re.findall(
+            r"(\d{2,3}\.\d{2})\s+(\d{2,3}\.\d{2})\s+([\d,]+)\s+(\d{1,3}\.\d)%\s+"
+            r"(\d{2,3}\.\d{2})\s+([\d,]+)\s+(\d{1,3}\.\d)%", tt)
+        for target_mz, actual_mz, abund, rel_abund, iso_mz, iso_abund, iso_ratio in rows:
+            target_rows.append({
+                "target_mz": float(target_mz),
+                "actual_mz": float(actual_mz),
+                "abund": float(abund.replace(",", "")),
+                "rel_abund": float(rel_abund),
+                "iso_mz": float(iso_mz),
+                "iso_abund": float(iso_abund.replace(",", "")),
+                "iso_ratio": float(iso_ratio),
+            })
     data["target_rows"] = target_rows
 
-    aw = _search(
-        r"H2?0\D+~?([\d.]+)%\s*N2\D+~?([\d.]+)%\s*O2\D+~?([\d.]+)%\s*CO2\D+~?([\d.]+)%",
-        tt.replace("\n", " "))
     m = re.search(
         r"H2?0\D+~?([\d.]+)%\s*N2\D+~?([\d.]+)%\s*O2\D+~?([\d.]+)%\s*CO2\D+~?([\d.]+)%",
         tt.replace("\n", " "), re.IGNORECASE)
