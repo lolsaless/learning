@@ -1,0 +1,105 @@
+﻿record_id,mgmt_no,seq,name,qty,unit
+3,04-장비-07~08,1,MIR 552,2대/set,set
+13,04-장비-42,1,AUTOSAMPLER,1,대
+14,04-장비-43,1,UPS(NPS2000) 한도전원,1,대
+14,04-장비-43,2,"Recirculation Water Cooling sys.
+(Cooling Sys. 5000 PE) perkin Elmer",1,대
+14,04-장비-43,3,"Air Compressor(Precisely Compressor)
+Perkin Elmer",1,대
+22,04-장비-60,1,"분동 50 g (지시값등급 50 g/E2)
+기물번호 : 18929995",1,개
+22,04-장비-60,2,"분동 100 g (지시값등급 100 g/E2)
+기물번호 : 23429415",1,개
+22,04-장비-60,3,"분동 200 g (지시값등급 200 g/E2)
+기물번호 : 23629381",1,개
+22,04-장비-60,4,방진판(석판),1,개
+25,04-장비-64,1,물벼룩배양 및 독성측정기외 8종,,
+25,04-장비-64,2,"(pH meter, DO meter, 냉장고, 노트북,",,
+25,04-장비-64,3,"순수제조기, 전자저울, 조도계, 현미경)",,
+27,04-장비-69,1,Main Body,1,set
+27,04-장비-69,2,전처리 장치(D2BX-02),1,set
+27,04-장비-69,3,Auto Sampler(HSU-2020),1,set
+27,04-장비-69,4,시약주입장치(AASU-2000),1,set
+27,04-장비-69,5,컴퓨터 및 프린터,1,set
+28,04-장비-71,1,Flame Automation  System,1,set
+28,04-장비-71,2,Vapor Generation System,1,set
+28,04-장비-71,3,Autosampler,1,set
+28,04-장비-71,4,Air Compressor,1,대
+29,04-장비-72,1,"UV/Persulfate, Dual Oxidation",1,set
+29,04-장비-72,2,Dual NDIR Dectector,1,set
+29,04-장비-72,3,Autosampler,1,set
+29,04-장비-72,4,Operation Software,1,대
+30,04-장비-73,1,Main Body,1,set
+30,04-장비-73,2,전처리 장치,1,set
+30,04-장비-73,3,Autosampler,1,set
+30,04-장비-73,4,Control System(PC),1,set
+31,04-장비-74,1,Main Body,1,set
+31,04-장비-74,2,Headspace(Tekmar HT3),1,set
+31,04-장비-74,3,"초순수제조장치(1ck Basic 300, 2차 Ultra 370)",1,set
+31,04-장비-74,4,항온항습기(LG 휘센),1,set
+31,04-장비-74,5,컴퓨터 및 프린터,1,set
+32,04-장비-74-1,1,1차 Basic 360,1,set
+32,04-장비-74-1,2,2차 Ultra 370,1,set
+33,04-장비-75,1,Main Body,1,대
+33,04-장비-75,2,로터 및 시료용기 세트(16HF100),16,개
+33,04-장비-75,3,로터 및 시료용기 세트 (24HVT50),10,개
+34,04-장비-76,1,Main Body,1,대
+34,04-장비-76,2,"환원기화 장치(SC-3A, RD-3A)",1,대
+42,04-장비-84,1,Main system,set,1
+42,04-장비-84,2,전용반응기 (HS-R200S),set,1
+42,04-장비-84,3,NRN 분석시약,set,1
+43,04-장비-85,1,PP 재질 흄후드,2,ea
+43,04-장비-85,2,실험테이블(간이씽크 포함),2,ea
+44,04-장비-86,1,광다이오드 어레이 자외선-가시광선 분광광도계,,
+44,04-장비-86,2,운용 소프트웨어,,
+44,04-장비-86,3,"Accessories(Auto Sipper system, cells etc.)",,
+44,04-장비-86,4,Operating PC System,,
+45,04-장비-87,1,TOC Analyzer,1,대
+45,04-장비-87,2,Autosampler with 72 positon sample rack,1,대
+45,04-장비-87,3,Gas Generator,1,대
+45,04-장비-87,4,Ultra Sonic Bath,1,대
+46,04-장비-88,1,Gas Chromatograph Mass Spectrometer System,1,대
+46,04-장비-88,2,Thermal Desorber System,1,대
+47,04-장비-89,1,물벼룩배양기(Serial No.,1,대
+47,04-장비-89,2,물벼룩배양기(Serial No.,1,대
+48,04-장비-90,1,BOD 인큐베이터(Serial No. 12112UC0001),1,대
+48,04-장비-90,2,BOD 인큐베이터(Serial No. 12112UC0002),1,대
+49,04-장비-91,1,QuAAtro 39 three-channels Main system,1,대
+49,04-장비-91,2,Auto sampling system with Ultra sonic homogenizer,1,대
+49,04-장비-91,3,Air compressor,1,대
+49,04-장비-91,4,On-line Autoclave digestion system,1,대
+49,04-장비-91,5,PC,1,대
+50,04-장비-92,1,Qtrap5500+ (Serial No. EX231312109),1,대
+50,04-장비-92,2,Exion LC (Serial No. AB3AD5976135),1,대
+50,04-장비-92,3,CTC PAL3 (Serial No. 555999),1,대
+51,04-장비-93,1,UDS-45RIE-1,2,대
+52,04-장비-94,1,"PinAAcle5/900(원자흡수분광기,AAS)",1,대
+54,04-장비-98,1,이온크로마토그래피 시스템,1,시스템
+54,04-장비-98,2,음이온 서프레서,1,개
+54,04-장비-98,3,전도도검출기,1,세트
+54,04-장비-98,4,자동시료주입기,1,세트
+54,04-장비-98,5,자동용리액 제조장치,1,세트
+55,04-장비-99,1,"QuAAtro Three Channels System
+(Ammonia, Fluoride, MBAS)",1,세트
+55,04-장비-99,2,Auto Sampler with triple probe,1,세트
+55,04-장비-99,3,Automatic cleaning & shut down system,1,세트
+55,04-장비-99,4,"On-Line Distillation system
+(Ammonia, Fluoride)",2,세트
+55,04-장비-99,5,Advanced cooling module,1,세트
+56,04-장비-100,1,실험실용배기기(CHS-N12150),2,ea
+57,04-장비-101,1,냉장고,2,대
+58,04-장비-102,1,VSTAR12,1,set
+59,04-장비-103,1,"UV-VIS Spectrophotometer, UV-2600i Plus",1,ea
+59,04-장비-103,2,"Sipper Unit 160L, UV",1,ea
+59,04-장비-103,3,"Multi-Cell Sample Comp, 1600",1,ea
+59,04-장비-103,4,"Rect. Long Path Cell Holder, for UV-240",1,ea
+59,04-장비-103,5,"RECTANG.CELL,50MM(S)",4,ea
+59,04-장비-103,6,"Type1 P-10, V-3.5mL Quartz Cell",12,ea
+59,04-장비-103,7,"Power CORD SET,PHP-206S+PHS-301 2.4M (KOR)",1,ea
+59,04-장비-103,8,Data Processing Unit,1,set
+60,04-장비-104,1,Washing and disinfection Machine,1,ea
+60,04-장비-104,2,Injection nozzle (56 or more nozzels available),2,ea
+60,04-장비-104,3,Washing Insert,1,ea
+60,04-장비-104,4,Support for beakers (50 or more beakers available),1,ea
+60,04-장비-104,5,Detergent level sensor,1,ea
+60,04-장비-104,6,Delivery flow system,1,ea
