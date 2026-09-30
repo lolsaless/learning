@@ -1,0 +1,14 @@
+[최초 1회 설치] 명령 프롬프트(cmd)에서:
+    pip install pywin32 openpyxl
+  - 내부망이라 pip가 안 되면: 인터넷 PC에서
+    pip download pywin32 openpyxl -d pkgs
+    로 받은 뒤 USB로 옮겨서  pip install --no-index --find-links pkgs pywin32 openpyxl
+
+[실행] 실행.bat 더블클릭 (또는 python 장비입력도우미.py)
+
+[사용 순서]
+ 1. Edge에서 장비/물품 > 장비코드등록 화면을 열어 둔다
+ 2. 도우미에서 [엑셀 불러오기] → 장비등록_양식.xlsx 형식의 파일 선택
+ 3. [연결 확인] → "시스템 연결 성공"이 나오는지 확인 (처음 한 번)
+ 4. 시스템에서 [추가] → 도우미에서 행 선택 → [선택 행 입력]
+ 5. 노란 칸 확인 후 시스템에서 [저장] → 등록 창을 X로 닫고 다시 [추가] → 반복
