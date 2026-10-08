@@ -1,0 +1,850 @@
+<title>한탄강 수계 수질 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*__LEAFLET_CSS__*/
+</style>
+<style>
+/* Layout: 상단 항목 선택 바 + 좌측 지점 패널 + 우측 작업 영역(요약 → 그래프 → 표). 하천 수질 측정 기록장 같은 차분한 정보 디자인 */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --panel-2:#f6f8f8; --ink:#13201f; --ink-2:#47595a; --ink-3:#7a8a8a;
+  --line:#d9e1e0; --line-2:#e8edec; --accent:#0c666b; --accent-ink:#ffffff; --accent-soft:#dcecea;
+  --warn:#9a6a00; --warn-soft:#fff3d6; --focus:#1b8a8f;
+  --above:#d6452f; --below:#2a6bc9; --base:#9aaba9;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --q100:#cde2fb; --q250:#86b6ef; --q400:#3987e5; --q550:#1c5cab; --q700:#0d366b; --mid:#f0efec; --r400:#e34948; --r600:#a42727;
+  --map-fill:#e3ebe9; --map-focus:#d3e2df; --map-stroke:#a8bab7;
+  --f-ui:"IBM Plex Sans KR","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#3a4a47;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#3a4a47;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100vh}
+header.top{grid-column:1/-1;position:sticky;top:env(safe-area-inset-top,0px);z-index:1000;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-inline:20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.brand small{color:var(--ink-3);font-size:12px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;cursor:pointer;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg.items button[aria-pressed="true"]{font-weight:600}
+.tabs{display:flex;gap:2px}
+.tabs button{border:0;background:transparent;padding:8px 12px;cursor:pointer;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink-2)}
+.iconbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+aside.side{background:var(--panel);border-right:1px solid var(--line);padding:14px 14px 30px;display:flex;flex-direction:column;gap:14px;
+  position:sticky;top:var(--hdr,64px);height:calc(100vh - var(--hdr,64px));overflow:auto}
+.side h2{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.search{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 10px}
+.stlist{display:flex;flex-direction:column;gap:2px}
+.basin{margin-top:6px}
+.basin>.bh{display:flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;color:var(--ink-2);padding:6px 4px 4px;border-top:1px solid var(--line-2)}
+.river{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);padding:4px 4px 2px 10px}
+.st{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:6px;padding:3px 4px 3px 18px;border-radius:6px}
+.st:hover{background:var(--panel-2)}
+.st label{cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st.hl label{font-weight:600}
+.st .note{font-size:10.5px;color:var(--warn);margin-left:4px}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;margin:0;cursor:pointer}
+.star{border:0;background:transparent;cursor:pointer;color:var(--ink-3);font-size:15px;line-height:1;padding:2px 3px;border-radius:4px}
+.star[aria-pressed="true"]{color:#e0a100}
+.sw{position:relative;width:18px;height:18px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;overflow:hidden;flex:none}
+.sw input{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:30px;height:30px}
+.sw.custom{box-shadow:0 0 0 2px var(--ink-3)}
+.opt{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.opt label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.opt select{border:1px solid var(--line);background:var(--panel-2);border-radius:6px;padding:3px 6px}
+.colors{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px}
+.colors input[type=color]{width:34px;height:22px;border:1px solid var(--line);border-radius:5px;padding:0;background:none;cursor:pointer}
+.stack{display:flex;flex-direction:column;gap:8px}
+.hint{font-size:12px;color:var(--ink-3);margin:0}
+
+main{padding:18px 22px 40px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.view[hidden]{display:none!important}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:0}
+.kpi .k{font-size:12px;color:var(--ink-3)}
+.kpi .v{font-size:22px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:12px 16px 4px}
+.card-h h3{margin:0;font-size:15px;font-weight:600}
+.card-h .sub{color:var(--ink-3);font-size:12.5px}
+.card-h .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 16px 0;font-size:12.5px;color:var(--ink-2)}
+.legend .li{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:4px;padding:1px 4px}
+.legend .li:hover{background:var(--panel-2)}
+.legend .ln{width:16px;height:3px;border-radius:2px}
+.legend .mk{font-size:11px}
+.legend .muted{color:var(--ink-3)}
+.chart{width:100%;height:440px}
+.tablewrap{overflow:auto;max-height:520px;border-top:1px solid var(--line)}
+table.dt{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+.dt th,.dt td{padding:5px 8px;border-bottom:1px solid var(--line-2);white-space:nowrap;text-align:right}
+.dt thead th{position:sticky;top:0;background:var(--panel-2);color:var(--ink-2);font-weight:600;z-index:2;border-bottom:1px solid var(--line)}
+.dt th.l,.dt td.l{text-align:left}
+.dt td.stc{position:sticky;left:0;background:var(--panel);z-index:1;cursor:pointer;font-weight:500}
+.dt thead th.stc{position:sticky;left:0;z-index:3}
+.dt tr.hl td{background:color-mix(in oklab,var(--accent-soft) 60%,var(--panel))}
+.dt tr.hl td.stc{background:color-mix(in oklab,var(--accent-soft) 60%,var(--panel))}
+.dt td.up{color:var(--above)} .dt td.dn{color:var(--below)}
+.dt td .g{font-size:10px;margin-left:2px}
+.dt td.flag{outline:1.5px dashed var(--warn);outline-offset:-3px;background:var(--warn-soft)}
+.dt td.stat{background:var(--panel-2);color:var(--ink)}
+.dt .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid currentColor}
+.g0,.g1{color:#1d8a4a}.g2{color:#3b8f6a}.g3{color:#8a7a00}.g4{color:#c06a1a}.g5{color:#c2412d}.g6{color:#9b1c1c}
+.ok{color:#1d8a4a}.ng{color:#c2412d}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 16px 12px;font-size:12px;color:var(--ink-3)}
+.foot .flagkey{display:inline-block;width:14px;height:10px;outline:1.5px dashed var(--warn);background:var(--warn-soft);vertical-align:middle;margin-right:4px}
+
+/* map */
+.mapwrap{position:relative;height:640px;border-top:1px solid var(--line);overflow:hidden;border-radius:0 0 var(--r) var(--r)}
+#map{position:absolute;inset:0;background:var(--panel-2)}
+.leaflet-container{font-family:var(--f-ui);background:var(--panel-2)}
+.leaflet-tooltip.vlab{background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:none;padding:0 5px;font:500 11px/16px var(--f-num);border-radius:4px}
+.leaflet-tooltip.vlab:before{display:none}
+.leaflet-tooltip.nm{background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px}
+.leaflet-control-attribution{font-size:10px}
+.maplegend{position:absolute;left:12px;bottom:12px;z-index:500;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;min-width:180px}
+.maplegend .bar{height:8px;border-radius:4px;margin:4px 0 2px}
+.maplegend .ends{display:flex;justify-content:space-between;color:var(--ink-3)}
+.banner{position:absolute;right:12px;top:12px;bottom:12px;width:min(420px,calc(100% - 24px));z-index:600;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden;transition:transform .22s ease,opacity .22s ease}
+.banner[hidden]{display:flex!important;transform:translateX(30px);opacity:0;pointer-events:none}
+.banner .bh{padding:12px 14px 8px;border-bottom:1px solid var(--line-2);display:flex;gap:10px;align-items:flex-start}
+.banner .bh h4{margin:0;font-size:16px}
+.banner .bh p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.banner .x{margin-left:auto}
+.banner .bb{overflow:auto;padding:8px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.banner .mini{height:220px;width:100%}
+.itemgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.itemgrid .c{border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;cursor:pointer;background:var(--panel)}
+.itemgrid .c:hover{border-color:var(--ink-3)}
+.itemgrid .c.on{border-color:var(--accent);background:var(--accent-soft)}
+.itemgrid .c .k{font-size:11px;color:var(--ink-3)}
+.itemgrid .c .v{font-size:14px;font-weight:600}
+.warnchip{font-size:11.5px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:3000;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+.menu-toggle{display:none}
+
+@media (max-width:980px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .tabs{overflow-x:auto;max-width:100%}
+  aside.side{position:static;height:auto;max-height:none;border-right:0;border-bottom:1px solid var(--line)}
+  aside.side.collapsed .collapsible{display:none}
+  header.top{position:static}
+  .seg.items{flex-wrap:nowrap;overflow-x:auto;max-width:100%;border-radius:12px}
+  aside.side{padding-block:10px}
+  .menu-toggle{display:inline-block}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  main{padding:14px 16px 30px}
+  header.top{padding-inline:16px}
+  .chart{height:360px}
+  .mapwrap{height:560px}
+}
+@media (max-width:560px){
+  .banner{top:auto;height:62%;right:8px;left:8px;width:auto}
+  .itemgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="top" id="hdr">
+    <div class="brand">
+      <h1 id="ttl">한탄강 수계 수질 대시보드</h1>
+      <small id="meta"></small>
+    </div>
+    <div class="seg items" id="itemSeg" role="group" aria-label="분석항목"></div>
+    <nav class="tabs" role="tablist" aria-label="화면">
+      <button role="tab" data-view="ts" aria-selected="true">시계열</button>
+      <button role="tab" data-view="heat">히트맵</button>
+      <button role="tab" data-view="map">지도</button>
+      <button role="tab" data-view="year">연도별 색도</button>
+    </nav>
+    <button class="iconbtn menu-toggle" id="menuBtn" aria-expanded="false">지점 선택 ▾</button>
+  </header>
+
+  <aside class="side collapsed" id="side">
+    <section class="collapsible stack">
+      <div class="row" style="justify-content:space-between"><h2>지점</h2><span class="hint" id="selCount"></span></div>
+      <div class="row" id="basinChips"></div>
+      <div class="row">
+        <button class="chip" id="selAll">전체 선택</button>
+        <button class="chip" id="selNone">선택 해제</button>
+        <button class="chip" id="hlNone">강조 해제</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="지점·하천 검색" aria-label="지점 검색">
+      <p class="hint">☆ 강조(색 지정) · ● 눌러서 색상 변경</p>
+      <div class="stlist" id="stlist"></div>
+    </section>
+    <section class="collapsible opt">
+      <h2>표시</h2>
+      <label><input type="checkbox" id="oMarkers" checked> 평균 대비 ▲▼ 포인트</label>
+      <label>값 라벨 <select id="oLabels"><option value="auto">자동(강조 지점)</option><option value="all">모든 지점</option><option value="off">끄기</option></select></label>
+      <label><input type="checkbox" id="oMean" checked> 지점 평균선</label>
+      <label><input type="checkbox" id="oLimits" checked> 기준선(생활환경기준·목표)</label>
+      <label>기간 <select id="oFrom"></select> ~ <select id="oTo"></select></label>
+    </section>
+    <section class="collapsible stack">
+      <h2>색상</h2>
+      <div class="colors">
+        <input type="color" id="cAbove"><span>평균보다 높음 ▲</span>
+        <input type="color" id="cBelow"><span>평균보다 낮음 ▼</span>
+        <input type="color" id="cBase"><span>기본 선(강조 안 한 지점)</span>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="chip" id="cReset">색상 초기화</button></div>
+      <p class="hint" style="margin-top:8px">선택·색상 설정은 이 브라우저에 저장됩니다.</p>
+    </section>
+  </aside>
+
+  <main>
+    <div class="kpis" id="kpis"></div>
+
+    <section class="view" id="v-ts">
+      <div class="card">
+        <div class="card-h"><h3 id="tsTitle"></h3><span class="sub" id="tsSub"></span>
+          <div class="tools"><button class="iconbtn" id="tsImg">그림 저장</button></div></div>
+        <div class="legend" id="tsLegend"></div>
+        <div class="chart" id="tsChart"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h3>데이터</h3><span class="sub" id="tblSub"></span>
+          <div class="tools"><button class="iconbtn" id="tblCopy">표 복사(엑셀 붙여넣기)</button><button class="iconbtn" id="tblCsv">CSV 저장</button></div></div>
+        <div class="tablewrap"><table class="dt" id="tbl"></table></div>
+        <div class="foot"><span><b style="color:var(--above)">▲</b> 지점 평균보다 높음 · <b style="color:var(--below)">▼</b> 낮음 (선택 기간 기준)</span>
+          <span><i class="flagkey"></i>검토필요 표시 값</span><span>지점명을 누르면 강조 전환</span></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-heat" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="hmTitle"></h3><span class="sub" id="hmSub"></span>
+          <div class="tools"><div class="seg" id="hmMode"><button data-m="value" aria-pressed="true">측정값</button><button data-m="dev" aria-pressed="false">지점 평균 대비(%)</button></div></div></div>
+        <div class="chart" id="hmChart" style="height:auto"></div>
+        <div class="foot"><span>칸을 누르면 해당 지점을 강조하고 시계열로 이동합니다.</span></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-map" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="mpTitle"></h3><span class="sub">지점을 누르면 그래프 배너가 열립니다.</span>
+          <div class="tools">
+            <label class="hint" style="display:flex;align-items:center;gap:6px">기준 <select id="mpMonth" class="search" style="width:auto;padding:4px 8px"></select></label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLabels" checked> 값 표시</label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLines" checked> 지점 연결선</label>
+          </div></div>
+        <div class="mapwrap">
+          <div id="map"></div>
+          <div class="maplegend" id="mpLegend"></div>
+          <div class="banner" id="banner" hidden>
+            <div class="bh"><div style="min-width:0"><h4 id="bnName"></h4><p id="bnSub"></p></div>
+              <button class="iconbtn x" id="bnClose" aria-label="닫기">✕</button></div>
+            <div class="bb">
+              <div id="bnWarn"></div>
+              <div class="mini" id="bnChart"></div>
+              <div class="itemgrid" id="bnItems"></div>
+              <div class="btnrow"><button class="btn" id="bnGo">시계열에서 보기</button><button class="btn ghost" id="bnHl">강조 추가</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-year" hidden>
+      <div class="card">
+        <div class="card-h"><h3>연도별 평균 색도</h3><span class="sub" id="yrSub"></span>
+          <div class="tools"><label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="yrRetired"> 현재 조사하지 않는 지점 포함</label></div></div>
+        <div class="legend" id="yrLegend"></div>
+        <div class="chart" id="yrChart"></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-h"><h3>연도별 데이터</h3><span class="sub" id="yrTblSub"></span>
+          <div class="tools"><button class="iconbtn" id="yrCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="yrTbl"></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<!--__LIBS__-->
+<script>
+"use strict";
+const D = /*__DATA__*/null;
+
+/* ───────── 기본값 / 상태 ───────── */
+const SKEY = "hantan-wq-dashboard-v1";
+const store = { get(){ try{ return JSON.parse(localStorage.getItem(SKEY)||"{}"); }catch(e){ return {}; } },
+                set(v){ try{ localStorage.setItem(SKEY, JSON.stringify(v)); }catch(e){} } };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const ST = D.stations, M = D.months, ITEMS = D.items;
+const stByName = Object.fromEntries(ST.map(s=>[s.name,s]));
+const itemOf = c => ITEMS.find(i=>i.code===c) || {code:c,name:c,unit:"",dec:2};
+const multiYear = new Set(M.map(m=>m.slice(0,4))).size>1;
+const mLabel = m => multiYear ? m.slice(2,4)+"."+m.slice(5) : (+m.slice(5))+"월";
+const mLong = m => m.slice(0,4)+"년 "+(+m.slice(5))+"월";
+
+const saved = store.get();
+const S = {
+  item: saved.item && ITEMS.some(i=>i.code===saved.item) ? saved.item : (ITEMS.some(i=>i.code==="색도")?"색도":ITEMS[0].code),
+  view: saved.view || "ts",
+  sel: new Set((saved.sel||ST.map(s=>s.name)).filter(n=>stByName[n])),
+  hl: new Set((saved.hl || ST.filter(s=>/목표/.test(s.note)).map(s=>s.name)).filter(n=>stByName[n])),
+  custom: saved.custom || {},
+  slots: saved.slots || {},
+  opt: Object.assign({markers:true, labels:"auto", mean:true, limits:true}, saved.opt||{}),
+  from: 0, to: M.length-1,
+  colors: Object.assign({}, saved.colors||{}),
+  heatMode: saved.heatMode || "value",
+  mapMonth: "last", mapLabels:true, mapLines:true, retired:false,
+  q: ""
+};
+if (saved.range && saved.range[0] in M) { /* noop */ }
+if (saved.from!=null && saved.from < M.length) S.from = saved.from;
+if (saved.to!=null && saved.to < M.length && saved.to>=S.from) S.to = saved.to;
+const persist = () => store.set({item:S.item, view:S.view, sel:[...S.sel], hl:[...S.hl], custom:S.custom, slots:S.slots,
+  opt:S.opt, colors:S.colors, heatMode:S.heatMode, from:S.from, to:S.to});
+
+const col = k => S.colors[k] || css("--"+k);
+const PAL = () => [1,2,3,4,5,6,7,8].map(i=>css("--s"+i));
+
+/* ───────── 통계 ───────── */
+const fmt = (v, dec) => v==null||isNaN(v) ? "" : (+v).toLocaleString("ko-KR",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+function stats(arr){
+  const v = arr.filter(x=>x!=null);
+  if(!v.length) return {n:0};
+  const mean = v.reduce((a,b)=>a+b,0)/v.length;
+  const sd = v.length>1 ? Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/(v.length-1)) : 0;
+  return {n:v.length, mean, sd, max:Math.max(...v), min:Math.min(...v)};
+}
+const series = (st, item) => (D.values[st]?.[item] || []).slice(S.from, S.to+1);
+const months = () => M.slice(S.from, S.to+1);
+function grade(item, mean){
+  const L = D.limits[item]; if(!L || mean==null) return null;
+  for(let i=0;i<L.length;i++){ if(L[i].max==null || mean <= L[i].max + 1e-12) return {i, ...L[i]}; }
+  return {i:L.length-1, ...L[L.length-1]};
+}
+const targetOf = item => D.target[item];
+function judge(item, mean){
+  const g = grade(item, mean);
+  if(g) return {html:`<span class="pill g${g.i}">${g.code} ${g.name}</span>`, text:`${g.code} ${g.name}`};
+  const t = targetOf(item);
+  if(t!=null && mean!=null){ const ok = mean <= t; return {html:`<span class="pill ${ok?"ok":"ng"}">${ok?"달성":"미달성"}</span>`, text: ok?"달성":"미달성", ok}; }
+  return {html:"", text:""};
+}
+
+/* ───────── 색 배정: 색은 지점을 따라간다(재배정하지 않음) ───────── */
+function selectedOrdered(){ return ST.filter(s=>S.sel.has(s.name)).map(s=>s.name); }
+function colorPlan(names){
+  const many = names.length > 8;
+  const needs = names.filter(n => !many || S.hl.has(n));
+  // 필요 없어진 슬롯 반환, 새 지점은 비어 있는 가장 앞 슬롯
+  for(const k of Object.keys(S.slots)) if(!needs.includes(k)) delete S.slots[k];
+  const used = new Set(Object.values(S.slots));
+  for(const n of needs){ if(S.slots[n]==null){ let i=0; while(used.has(i) && i<8) i++; S.slots[n] = i<8 ? i : (Object.keys(S.slots).length % 8); used.add(S.slots[n]); } }
+  const pal = PAL(), base = col("base"), anyHl = names.some(n=>S.hl.has(n));
+  const out = {};
+  for(const n of names){
+    const emph = many ? S.hl.has(n) : (!anyHl || S.hl.has(n));
+    const c = S.custom[n] || (S.slots[n]!=null ? pal[S.slots[n]] : base);
+    out[n] = {color: emph ? c : (many ? base : c), emph, dim: !emph};
+  }
+  return out;
+}
+
+/* ───────── 공통 차트 빌더(시계열·연도별 공용) ───────── */
+function trendOption({cats, rows, item, dec, unit, meanFromRows=true, limits=true, title=""}){
+  const ink2 = css("--ink-2"), ink3 = css("--ink-3"), line = css("--line"), panel = css("--panel");
+  const above = col("above"), below = col("below");
+  const names = rows.map(r=>r.name);
+  const plan = colorPlan(names);
+  const emphN = names.filter(n=>plan[n].emph).length;
+  const showLabelFor = n => S.opt.labels==="all" ? true : S.opt.labels==="off" ? false : (plan[n].emph && (emphN<=6));
+  const ser = [];
+  for(const r of rows){
+    const p = plan[r.name], st = stats(r.values), mean = st.mean;
+    const mk = S.opt.markers && (p.emph || S.opt.labels==="all");
+    const lab = showLabelFor(r.name);
+    const data = r.values.map((v,i)=>{
+      if(v==null) return {value:null};
+      const up = mean!=null && v > mean + 1e-9, dn = mean!=null && v < mean - 1e-9;
+      const flag = r.flags && r.flags[i];
+      const d = {value:v, _flag:flag};
+      if(mk){
+        d.symbol = up||dn ? "triangle" : "circle";
+        d.symbolRotate = dn ? 180 : 0;
+        d.symbolSize = up||dn ? 11 : 7;
+        d.itemStyle = {color: up?above:dn?below:p.color, borderColor: flag? css("--warn") : panel, borderWidth: flag?2.5:1.5, borderType: flag?"dashed":"solid"};
+      }
+      if(lab) d.label = {show:true, position: dn?"bottom":"top", distance:6, formatter: fmt(v,dec), color: up?above:dn?below:ink2, fontSize:11, fontFamily:css("--f-num")};
+      return d;
+    });
+    const s = {
+      name:r.name, type:"line", data, connectNulls:true, smooth:false,
+      showSymbol: mk, symbol: mk ? "circle" : "none", symbolSize:7,
+      lineStyle:{width: p.emph ? 2.4 : 1.3, color:p.color, opacity: p.dim ? (names.length>8?0.55:0.3) : 1},
+      itemStyle:{color:p.color},
+      z: p.emph ? 5 : 2,
+      emphasis:{focus:"series", lineStyle:{width:3}},
+      labelLayout:{hideOverlap:true},
+      _mean: mean
+    };
+    const ml = [];
+    if(S.opt.mean && p.emph && mean!=null && emphN<=6){
+      ml.push({yAxis:mean, lineStyle:{color:p.color, type:[4,4], width:1.2, opacity:.9},
+        label:{show:true, position:"insideEndTop", formatter:`평균 ${fmt(mean,dec)}`, color:ink2, fontSize:11}});
+    }
+    if(ml.length) s.markLine = {silent:true, symbol:"none", data:ml};
+    ser.push(s);
+  }
+  // 기준선
+  if(limits && S.opt.limits){
+    const L = (D.limits[item]||[]).filter(l=>l.max!=null);
+    const t = targetOf(item);
+    let vmax = -Infinity; rows.forEach(r=>r.values.forEach(v=>{ if(v!=null && v>vmax) vmax=v; }));
+    const seen = new Set(), lines = [];
+    L.forEach(l=>{ if(seen.has(l.max)) return; seen.add(l.max);
+      // 데이터 최대값의 1.15배 안쪽 기준선만(축이 과도하게 늘어나지 않도록)
+      if(l.max <= vmax*1.15) lines.push({yAxis:l.max, label:{formatter:`${l.code} ≤${l.max}`}}); });
+    if(t!=null) lines.push({yAxis:t, lineStyle:{color:css("--accent"), type:"solid", width:1.4}, label:{formatter:`목표 ${t}`, color:css("--accent"), fontWeight:600}});
+    if(lines.length) ser.push({name:"__limits", type:"line", data:[], silent:true, tooltip:{show:false},
+      markLine:{silent:true, symbol:"none", lineStyle:{color:ink3, type:[2,4], width:1}, label:{position:"insideStartTop", color:ink3, fontSize:10.5}, data:lines}});
+  }
+  return {
+    animationDuration:400, animationDurationUpdate:300,
+    grid:{left:56, right:24, top:28, bottom: cats.length>24?64:36},
+    textStyle:{fontFamily:css("--f-ui")},
+    tooltip:{trigger:"axis", confine:true, backgroundColor:panel, borderColor:line, textStyle:{color:css("--ink"),fontSize:12},
+      axisPointer:{type:"line", lineStyle:{color:ink3, type:"dashed"}},
+      formatter: ps => tooltipHtml(ps, cats, dec, unit, plan)},
+    xAxis:{type:"category", data:cats, boundaryGap:false, axisLine:{lineStyle:{color:line}}, axisTick:{show:false},
+      axisLabel:{color:ink2, fontFamily:css("--f-num")}},
+    yAxis:{type:"value", scale:false, splitLine:{lineStyle:{color:css("--line-2")}},
+      axisLabel:{color:ink2, fontFamily:css("--f-num")}},
+    dataZoom: cats.length>24 ? [{type:"inside"},{type:"slider", height:18, bottom:8}] : [{type:"inside"}],
+    series:ser
+  };
+}
+function tooltipHtml(ps, cats, dec, unit, plan){
+  ps = ps.filter(p=>p.seriesName!=="__limits" && p.value!=null);
+  if(!ps.length) return "";
+  const idx = ps[0].dataIndex;
+  const rows = ps.map(p=>{ const s = p.series || {}; return {n:p.seriesName, v:p.value, c:plan[p.seriesName]?.color, e:plan[p.seriesName]?.emph, flag:p.data?._flag}; });
+  const means = {}; tsCache.rowsMean && Object.assign(means, tsCache.rowsMean);
+  rows.sort((a,b)=> (b.e-a.e) || (b.v-a.v));
+  const lim = 14, more = rows.length - lim;
+  const ab = col("above"), be = col("below");
+  const lines = rows.slice(0,lim).map(r=>{
+    const m = means[r.n]; const up = m!=null && r.v>m+1e-9, dn = m!=null && r.v<m-1e-9;
+    const g = up?`<span style="color:${ab}">▲</span>`:dn?`<span style="color:${be}">▼</span>`:"";
+    return `<div style="display:flex;gap:8px;align-items:center;${r.e?"font-weight:600":""}"><span style="width:10px;height:3px;background:${r.c};border-radius:2px"></span><span style="flex:1">${r.n}${r.flag?' <span style="color:'+css("--warn")+'">검토</span>':""}</span><span style="font-family:${css("--f-num")}">${fmt(r.v,dec)}</span>${g}</div>`;
+  }).join("");
+  return `<div style="min-width:180px"><div style="color:${css("--ink-3")};margin-bottom:4px">${cats[idx]} · ${unit}</div>${lines}${more>0?`<div style="color:${css("--ink-3")}">외 ${more}개 지점</div>`:""}</div>`;
+}
+function legendHtml(el, rows){
+  const names = rows.map(r=>r.name), plan = colorPlan(names);
+  const emph = names.filter(n=>plan[n].emph), rest = names.length - emph.length;
+  let h = emph.map(n=>`<span class="li" data-st="${n}" title="눌러서 강조 전환"><span class="ln" style="background:${plan[n].color}"></span>${n}</span>`).join("");
+  if(rest>0) h += `<span class="li muted"><span class="ln" style="background:${col("base")}"></span>그 밖의 지점 ${rest}개</span>`;
+  if(S.opt.markers) h += `<span class="li muted"><span class="mk" style="color:${col("above")}">▲</span>평균보다 높음 <span class="mk" style="color:${col("below")}">▼</span>낮음</span>`;
+  el.innerHTML = h;
+  el.querySelectorAll(".li[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+}
+
+/* ───────── 차트 인스턴스 ───────── */
+const charts = {};
+function chartOn(id){
+  const el = document.getElementById(id);
+  if(!charts[id]){ charts[id] = echarts.init(el, null, {renderer:"canvas"}); new ResizeObserver(()=>charts[id].resize()).observe(el); }
+  return charts[id];
+}
+const tsCache = {};
+
+/* ───────── 화면: 상단/사이드 ───────── */
+function renderHeader(){
+  document.getElementById("meta").textContent = `${mLong(M[0])} ~ ${mLong(M[M.length-1])} · 지점 ${ST.length}개 · 생성 ${D.generated}`;
+  const seg = document.getElementById("itemSeg");
+  seg.innerHTML = ITEMS.map(i=>`<button data-it="${i.code}" aria-pressed="${i.code===S.item}" title="${i.name}">${i.code}</button>`).join("");
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.item=b.dataset.it; seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b)); refresh(); });
+  document.querySelectorAll(".tabs button").forEach(b=>{
+    b.setAttribute("aria-selected", b.dataset.view===S.view);
+    b.onclick=()=>{ S.view=b.dataset.view; document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected", x===b)); refresh(); };
+  });
+}
+function renderSide(){
+  const basins = [...new Set(ST.map(s=>s.basin))];
+  const bc = document.getElementById("basinChips");
+  bc.innerHTML = basins.map(b=>{ const all = ST.filter(s=>s.basin===b); const on = all.every(s=>S.sel.has(s.name)) && S.sel.size===all.length;
+    return `<button class="chip ${on?"on":""}" data-b="${b}">${b}만</button>`; }).join("");
+  bc.querySelectorAll("button").forEach(x=>x.onclick=()=>{ S.sel = new Set(ST.filter(s=>s.basin===x.dataset.b).map(s=>s.name)); refresh(); });
+  const q = S.q.trim();
+  const match = s => !q || (s.name+s.river+s.basin+s.addr).includes(q);
+  const pal = PAL(); const plan = colorPlan(selectedOrdered());
+  let h = "";
+  for(const b of basins){
+    const bs = ST.filter(s=>s.basin===b && match(s)); if(!bs.length) continue;
+    const allOn = bs.every(s=>S.sel.has(s.name)), someOn = bs.some(s=>S.sel.has(s.name));
+    h += `<div class="basin"><div class="bh"><input type="checkbox" data-grp="basin" data-k="${b}" ${allOn?"checked":""} ${!allOn&&someOn?'data-ind="1"':""} aria-label="${b} 전체">${b}</div>`;
+    const rivers = [...new Set(bs.map(s=>s.river))];
+    for(const rv of rivers){
+      const rs = bs.filter(s=>s.river===rv);
+      if(rs.length>1){ const a = rs.every(s=>S.sel.has(s.name)), so = rs.some(s=>S.sel.has(s.name));
+        h += `<div class="river"><input type="checkbox" data-grp="river" data-k="${rv}" ${a?"checked":""} ${!a&&so?'data-ind="1"':""} aria-label="${rv} 전체">${rv}</div>`; }
+      for(const s of rs){
+        const on = S.sel.has(s.name), hl = S.hl.has(s.name);
+        const c = S.custom[s.name] || (plan[s.name]?.emph || hl ? plan[s.name]?.color : null) || col("base");
+        const hex = toHex(c);
+        h += `<div class="st ${hl?"hl":""}"><input type="checkbox" id="c_${s.id}" data-st="${s.name}" ${on?"checked":""}>
+          <label for="c_${s.id}" title="${s.addr}">${s.name}${s.note?`<span class="note">${s.note}</span>`:""}</label>
+          <button class="star" data-hl="${s.name}" aria-pressed="${hl}" title="강조">${hl?"★":"☆"}</button>
+          <span class="sw ${S.custom[s.name]?"custom":""}" style="background:${c}" title="색상 지정(우클릭: 기본값으로)" data-sw="${s.name}"><input type="color" value="${hex}" data-col="${s.name}" aria-label="${s.name} 색상"></span></div>`;
+      }
+    }
+    h += `</div>`;
+  }
+  const list = document.getElementById("stlist"); list.innerHTML = h;
+  list.querySelectorAll("input[data-ind]").forEach(x=>x.indeterminate=true);
+  list.querySelectorAll("input[data-st]").forEach(x=>x.onchange=()=>{ x.checked?S.sel.add(x.dataset.st):S.sel.delete(x.dataset.st); refresh(); });
+  list.querySelectorAll("input[data-grp]").forEach(x=>x.onchange=()=>{
+    const key = x.dataset.grp==="basin"?"basin":"river";
+    ST.filter(s=>s[key]===x.dataset.k).forEach(s=> x.checked?S.sel.add(s.name):S.sel.delete(s.name)); refresh(); });
+  list.querySelectorAll("button[data-hl]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.hl));
+  list.querySelectorAll("input[data-col]").forEach(x=>{
+    x.oninput=()=>{ S.custom[x.dataset.col]=x.value; S.hl.add(x.dataset.col); S.sel.add(x.dataset.col); x.parentElement.style.background=x.value; };
+    x.onchange=()=>refresh();
+  });
+  list.querySelectorAll("[data-sw]").forEach(x=>x.oncontextmenu=e=>{ e.preventDefault(); delete S.custom[x.dataset.sw]; refresh(); toast(`${x.dataset.sw} 색상을 기본값으로 되돌렸습니다`); });
+  document.getElementById("selCount").textContent = `${S.sel.size}/${ST.length} 선택 · 강조 ${[...S.hl].filter(n=>S.sel.has(n)).length}`;
+}
+function toHex(c){ if(/^#[0-9a-f]{6}$/i.test(c)) return c; const x=document.createElement("canvas").getContext("2d"); x.fillStyle=c; return x.fillStyle.length===7?x.fillStyle:"#888888"; }
+function toggleHl(n){ S.hl.has(n)?S.hl.delete(n):(S.hl.add(n), S.sel.add(n)); refresh(); }
+
+/* ───────── KPI ───────── */
+function renderKpis(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months();
+  const el = document.getElementById("kpis");
+  if(!names.length){ el.innerHTML = `<div class="kpi" style="grid-column:1/-1"><div class="k">선택된 지점이 없습니다</div><div class="s">왼쪽에서 지점을 선택하세요.</div></div>`; return; }
+  let all=[], mx={v:-Infinity}, mn={v:Infinity};
+  names.forEach(n=>series(n,S.item).forEach((v,i)=>{ if(v==null) return; all.push(v); if(v>mx.v) mx={v,n,m:ms[i]}; if(v<mn.v) mn={v,n,m:ms[i]}; }));
+  const st = stats(all);
+  let tile4;
+  const t = targetOf(S.item), L = D.limits[S.item];
+  if(t!=null){ const ok = names.filter(n=>{ const s=stats(series(n,S.item)); return s.n && s.mean<=t; }).length;
+    tile4 = `<div class="k">목표(${t}${it.unit}) 달성 지점</div><div class="v num">${ok}<small>/ ${names.length}</small></div><div class="s">지점별 기간 평균 기준</div>`; }
+  else if(L){ const cnt = {}; names.forEach(n=>{ const g = grade(S.item, stats(series(n,S.item)).mean); if(g) cnt[g.i]=(cnt[g.i]||0)+1; });
+    const good = Object.entries(cnt).filter(([i])=>+i<=2).reduce((a,[,c])=>a+c,0);
+    tile4 = `<div class="k">II등급(약간좋음) 이상 지점</div><div class="v num">${good}<small>/ ${names.length}</small></div><div class="s">${Object.entries(cnt).sort((a,b)=>a[0]-b[0]).map(([i,c])=>`${L[i].code} ${c}`).join(" · ")}</div>`; }
+  else { const lastM = ms[ms.length-1]; const lv = names.map(n=>series(n,S.item).at(-1)).filter(v=>v!=null);
+    tile4 = `<div class="k">${mLong(lastM)} 평균</div><div class="v num">${fmt(stats(lv).mean,it.dec)}<small>${it.unit}</small></div><div class="s">${lv.length}개 지점</div>`; }
+  const nFlag = names.reduce((a,n)=>a+ms.filter(m=>D.flags[n]?.[m]).length,0);
+  el.innerHTML = `
+    <div class="kpi"><div class="k">${it.name} 기간 평균</div><div class="v num">${fmt(st.mean,it.dec)}<small>${it.unit}</small></div><div class="s">${names.length}개 지점 · ${st.n}건${nFlag?` · 검토필요 ${nFlag}건`:""}</div></div>
+    <div class="kpi"><div class="k">최고값</div><div class="v num">${fmt(mx.v,it.dec)}<small>${it.unit}</small></div><div class="s">${mx.n||"-"} · ${mx.m?mLong(mx.m):""}</div></div>
+    <div class="kpi"><div class="k">최저값</div><div class="v num">${fmt(mn.v,it.dec)}<small>${it.unit}</small></div><div class="s">${mn.n||"-"} · ${mn.m?mLong(mn.m):""}</div></div>
+    <div class="kpi">${tile4}</div>`;
+}
+
+/* ───────── 시계열 + 표 ───────── */
+function renderTs(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months();
+  document.getElementById("tsTitle").textContent = `${it.name} 월별 변화`;
+  document.getElementById("tsSub").textContent = `${names.length}개 지점 · ${mLong(ms[0])}~${mLong(ms[ms.length-1])} · 단위 ${it.unit}`;
+  const rows = names.map(n=>({name:n, values:series(n,S.item), flags:ms.map(m=>D.flags[n]?.[m]||null)}));
+  tsCache.rowsMean = Object.fromEntries(rows.map(r=>[r.name, stats(r.values).mean]));
+  legendHtml(document.getElementById("tsLegend"), rows);
+  const ch = chartOn("tsChart");
+  ch.setOption(trendOption({cats:ms.map(mLabel), rows, item:S.item, dec:it.dec, unit:it.unit}), true);
+  renderTable(rows, ms, it);
+}
+function renderTable(rows, ms, it){
+  const plan = colorPlan(rows.map(r=>r.name));
+  const hasJ = !!(D.limits[S.item] || targetOf(S.item)!=null);
+  let h = `<thead><tr><th class="l stc">지점</th><th class="l">하천</th>${ms.map(m=>`<th>${mLabel(m)}</th>`).join("")}<th>최대</th><th>최소</th><th>평균</th><th>표준편차</th>${hasJ?`<th class="l">${targetOf(S.item)!=null?"목표":"생활환경기준"}</th>`:""}</tr></thead><tbody>`;
+  const tsv = [["지점","하천",...ms,"최대","최소","평균","표준편차",...(hasJ?["판정"]:[])]];
+  for(const r of rows){
+    const s = stats(r.values), st = stByName[r.name], j = judge(S.item, s.mean);
+    const cells = r.values.map((v,i)=>{
+      if(v==null) return `<td class="num"></td>`;
+      const up = v > s.mean+1e-9, dn = v < s.mean-1e-9, f = r.flags[i];
+      const date = D.dates[r.name]?.[ms[i]];
+      return `<td class="num ${S.opt.markers?(up?"up":dn?"dn":""):""} ${f?"flag":""}" title="${date?"채취일 "+date:""}${f?"\n"+f:""}">${fmt(v,it.dec)}${S.opt.markers?(up?'<span class="g">▲</span>':dn?'<span class="g">▼</span>':""):""}</td>`;
+    }).join("");
+    h += `<tr class="${S.hl.has(r.name)?"hl":""}"><td class="l stc" data-st="${r.name}" title="${st.addr}"><span class="dot" style="background:${plan[r.name].color}"></span>${r.name}</td><td class="l">${st.river}</td>${cells}
+      <td class="num stat">${fmt(s.max,it.dec)}</td><td class="num stat">${fmt(s.min,it.dec)}</td><td class="num stat"><b>${fmt(s.mean,it.dec)}</b></td><td class="num stat">${fmt(s.sd,it.dec)}</td>${hasJ?`<td class="l">${j.html}</td>`:""}</tr>`;
+    tsv.push([r.name, st.river, ...r.values.map(v=>v==null?"":v), s.max??"", s.min??"", s.mean!=null?+s.mean.toFixed(4):"", s.sd!=null?+s.sd.toFixed(4):"", ...(hasJ?[j.text]:[])]);
+  }
+  h += `</tbody>`;
+  const tb = document.getElementById("tbl"); tb.innerHTML = h;
+  tb.querySelectorAll("td[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+  document.getElementById("tblSub").textContent = `${it.name} (${it.unit}) · ${rows.length}개 지점`;
+  tsCache.tsv = tsv; tsCache.fname = `${S.item}_${ms[0]}_${ms[ms.length-1]}`;
+}
+
+/* ───────── 히트맵 ───────── */
+function renderHeat(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months();
+  document.getElementById("hmTitle").textContent = `${it.name} 지점 × 월`;
+  document.getElementById("hmSub").textContent = S.heatMode==="value" ? `측정값(${it.unit}) · 진할수록 높음` : `지점 평균 대비 증감률 · 빨강=평균보다 높음, 파랑=낮음`;
+  document.querySelectorAll("#hmMode button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.m===S.heatMode));
+  const el = document.getElementById("hmChart");
+  el.style.height = Math.max(260, names.length*22 + 90) + "px";
+  const ch = chartOn("hmChart"); ch.resize();
+  const ys = names.slice().reverse();
+  const data = [], ink = css("--ink"), panel = css("--panel");
+  let vals = [];
+  ys.forEach((n,yi)=>{ const v = series(n,S.item), s = stats(v);
+    v.forEach((x,xi)=>{ if(x==null) return; const dev = s.mean? (x-s.mean)/s.mean*100 : 0;
+      data.push({value:[xi, yi, S.heatMode==="value"?x:dev], raw:x, dev, flag:D.flags[n]?.[ms[xi]]}); vals.push(S.heatMode==="value"?x:dev); }); });
+  vals.sort((a,b)=>a-b);
+  const q = p => vals.length? vals[Math.min(vals.length-1, Math.floor(p*(vals.length-1)))] : 0;
+  const vm = S.heatMode==="value"
+    ? {min: vals[0]??0, max: q(.97), inRange:{color:[css("--q100"),css("--q250"),css("--q400"),css("--q550"),css("--q700")]}}
+    : (()=>{ const m = Math.max(Math.abs(q(.03)), Math.abs(q(.97)), 10); return {min:-m, max:m, inRange:{color:[css("--q550"),css("--q250"),css("--mid"),css("--r400"),css("--r600")]}}; })();
+  const rng = (vm.max - vm.min) || 1;
+  const labColor = v => S.heatMode==="value" ? ((v-vm.min)/rng > 0.55 ? "#ffffff" : ink) : (Math.abs(v)/vm.max > 0.6 ? "#ffffff" : ink);
+  data.forEach(d=>{ d.label = {color: labColor(d.value[2])}; if(d.flag) d.itemStyle = {borderColor:css("--warn"), borderWidth:2, borderType:"dashed"}; });
+  ch.setOption({
+    animation:false, textStyle:{fontFamily:css("--f-ui")},
+    grid:{left:96, right:20, top:28, bottom:64},
+    tooltip:{confine:true, backgroundColor:panel, borderColor:css("--line"), textStyle:{color:ink,fontSize:12},
+      formatter:p=>`<b>${ys[p.value[1]]}</b> · ${mLong(ms[p.value[0]])}<br>${fmt(p.data.raw,it.dec)} ${it.unit}<br><span style="color:${css("--ink-3")}">지점 평균 대비 ${p.data.dev>=0?"+":""}${p.data.dev.toFixed(0)}%</span>${p.data.flag?`<br><span style="color:${css("--warn")}">검토필요: ${p.data.flag}</span>`:""}`},
+    xAxis:{type:"category", data:ms.map(mLabel), position:"top", axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:css("--ink-2"), fontFamily:css("--f-num")}},
+    yAxis:{type:"category", data:ys, axisLine:{show:false}, axisTick:{show:false},
+      axisLabel:{color:css("--ink-2"), formatter:n=>S.hl.has(n)?`{b|${n}}`:n, rich:{b:{fontWeight:700,color:ink}}}},
+    visualMap:{type:"continuous", ...vm, calculable:false, orient:"horizontal", left:"center", bottom:8, itemHeight:220, itemWidth:10,
+      textStyle:{color:css("--ink-2")}, formatter: v=> S.heatMode==="value"? fmt(v,it.dec) : (v>0?"+":"")+Math.round(v)+"%", dimension:2},
+    series:[{type:"heatmap", data, itemStyle:{borderColor:panel, borderWidth:2, borderRadius:3},
+      label:{show:true, fontSize:10.5, fontFamily:css("--f-num"), formatter:p=>fmt(p.data.raw, Math.min(it.dec,2))},
+      emphasis:{itemStyle:{borderColor:ink, borderWidth:1.5}}}]
+  }, true);
+  ch.off("click"); ch.on("click", p=>{ const n = ys[p.value[1]]; S.hl.add(n); S.view="ts"; document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected", x.dataset.view==="ts")); refresh(); toast(`${n} 강조`); });
+}
+
+/* ───────── 지도 ───────── */
+let map, geoLayer, mkLayer, lineLayer, tileLayer, bannerSt=null;
+function rampColor(t){
+  const stops = [css("--q100"),css("--q250"),css("--q400"),css("--q550"),css("--q700")].map(h=>toHex(h));
+  t = Math.max(0, Math.min(1, t)); const p = t*(stops.length-1), i = Math.min(stops.length-2, Math.floor(p)), f = p-i;
+  const a = stops[i].match(/\w\w/g).map(x=>parseInt(x,16)), b = stops[i+1].match(/\w\w/g).map(x=>parseInt(x,16));
+  return "#"+a.map((x,k)=>Math.round(x+(b[k]-x)*f).toString(16).padStart(2,"0")).join("");
+}
+function isDark(){ return document.documentElement.dataset.theme==="dark" || (document.documentElement.dataset.theme!=="light" && matchMedia("(prefers-color-scheme: dark)").matches); }
+function initMap(){
+  if(map) return;
+  map = L.map("map", {zoomControl:true, attributionControl:true, preferCanvas:false}).setView([37.93,127.15], 10);
+  try{
+    tileLayer = L.tileLayer(isDark()?"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png":"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      {subdomains:"abcd", maxZoom:18, attribution:'&copy; OpenStreetMap &copy; CARTO', opacity:.9}).addTo(map);
+  }catch(e){}
+  if(D.geo){
+    geoLayer = L.geoJSON(D.geo, {style:f=>({color:css("--map-stroke"), weight:f.properties.focus?1.4:0.8, fillColor:f.properties.focus?css("--map-focus"):css("--map-fill"), fillOpacity:f.properties.focus?.55:.35, dashArray:f.properties.focus?null:"3 3"}),
+      onEachFeature:(f,l)=>l.bindTooltip(f.properties.name,{permanent:false,direction:"center",className:"nm"})}).addTo(map);
+    geoLayer.bringToBack();
+  }
+  mkLayer = L.layerGroup().addTo(map); lineLayer = L.layerGroup().addTo(map);
+  const pts = ST.filter(s=>s.lat&&s.lon).map(s=>[s.lat,s.lon]);
+  if(pts.length) map.fitBounds(pts, {paddingTopLeft:[30,30], paddingBottomRight:[innerWidth>900?440:30, 30]});
+}
+function mapValue(n){
+  const v = series(n,S.item);
+  if(S.mapMonth==="mean") return stats(v).mean;
+  const idx = S.mapMonth==="last" ? (()=>{ for(let i=v.length-1;i>=0;i--) if(v[i]!=null) return i; return -1; })() : months().indexOf(S.mapMonth);
+  return idx>=0 ? v[idx] : null;
+}
+function renderMap(){
+  const it = itemOf(S.item), ms = months();
+  document.getElementById("mpTitle").textContent = `${it.name} 지점 분포`;
+  const sel = document.getElementById("mpMonth");
+  sel.innerHTML = `<option value="last">최근 측정월</option><option value="mean">기간 평균</option>` + ms.slice().reverse().map(m=>`<option value="${m}">${mLong(m)}</option>`).join("");
+  sel.value = S.mapMonth==="last"||S.mapMonth==="mean"||ms.includes(S.mapMonth) ? S.mapMonth : "last";
+  initMap(); setTimeout(()=>map.invalidateSize(), 50);
+  const dk = isDark();
+  if(tileLayer && tileLayer._dk!==dk){ tileLayer.setUrl(dk?"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png":"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"); tileLayer._dk=dk; }
+  if(geoLayer) geoLayer.setStyle(f=>({color:css("--map-stroke"), fillColor:f.properties.focus?css("--map-focus"):css("--map-fill")}));
+  mkLayer.clearLayers(); lineLayer.clearLayers();
+  const vs = ST.map(s=>mapValue(s.name)).filter(v=>v!=null).sort((a,b)=>a-b);
+  const lo = vs[0] ?? 0, hi = vs[Math.floor((vs.length-1)*.95)] ?? 1;
+  if(S.mapLines){
+    const rivers = [...new Set(ST.map(s=>s.river))];
+    rivers.forEach(rv=>{ const pts = ST.filter(s=>s.river===rv && s.lat).map(s=>[s.lat,s.lon]);
+      if(pts.length>1) L.polyline(pts,{color:css("--accent"),weight:2,opacity:.45,dashArray:"5 6",interactive:false}).addTo(lineLayer); });
+  }
+  const t = targetOf(S.item);
+  for(const s of ST){
+    if(!s.lat||!s.lon) continue;
+    const v = mapValue(s.name), on = S.sel.has(s.name), hl = S.hl.has(s.name);
+    const fill = v==null ? css("--panel-2") : rampColor((v-lo)/((hi-lo)||1));
+    const m = L.circleMarker([s.lat,s.lon], {radius: hl?11:8, color: hl?css("--ink"):css("--panel"), weight: hl?2.5:2, fillColor:fill, fillOpacity: on?0.95:0.35, opacity: on?1:0.5});
+    m.bindTooltip(`<b>${s.name}</b> ${v!=null?fmt(v,it.dec)+" "+it.unit:"자료 없음"}`, {direction:"top", offset:[0,-8], className:"nm"});
+    m.on("click", ()=>openBanner(s.name));
+    m.addTo(mkLayer);
+    if(S.mapLabels && v!=null && on){
+      const over = t!=null && v>t;
+      L.tooltip({permanent:true, direction:"right", offset:[8,0], className:"vlab", interactive:false})
+        .setLatLng([s.lat,s.lon]).setContent(`<span style="${over?`color:${col("above")}`:""}">${fmt(v,it.dec)}</span>`).addTo(mkLayer);
+    }
+  }
+  const lg = document.getElementById("mpLegend");
+  lg.innerHTML = `<b>${it.code}</b> <span style="color:var(--ink-3)">${S.mapMonth==="mean"?"기간 평균":S.mapMonth==="last"?"최근 측정월":mLong(S.mapMonth)} · ${it.unit}</span>
+    <div class="bar" style="background:linear-gradient(90deg,${[0,.25,.5,.75,1].map(rampColor).join(",")})"></div>
+    <div class="ends num"><span>${fmt(lo,it.dec)}</span><span>${fmt(hi,it.dec)}+</span></div>
+    ${targetOf(S.item)!=null&&S.mapLabels?`<div style="margin-top:4px;font-size:11px"><span style="color:${col("above")}">빨간 값</span> = 목표(${targetOf(S.item)}) 초과</div>`:""}
+    ${ST.some(s=>s.coord==="추정")?`<div style="margin-top:6px;color:var(--warn);font-size:11px">일부 좌표는 주소 기반 추정값</div>`:""}`;
+  if(bannerSt) openBanner(bannerSt, true);
+}
+function openBanner(n, keep){
+  bannerSt = n;
+  const s = stByName[n], it = itemOf(S.item), ms = months();
+  const b = document.getElementById("banner"); b.hidden = false;
+  document.getElementById("bnName").textContent = n;
+  document.getElementById("bnSub").textContent = `${s.basin} · ${s.river} · ${s.addr}`;
+  document.getElementById("bnWarn").innerHTML = [s.coord==="추정"?`<div class="warnchip">지도 위치는 주소로 추정한 좌표입니다. DB의 지점정보에서 보정하세요.</div>`:"",
+    ms.some(m=>D.flags[n]?.[m])?`<div class="warnchip" style="margin-top:4px">검토필요: ${ms.filter(m=>D.flags[n]?.[m]).map(mLong).join(", ")}</div>`:""].join("");
+  const rows = [{name:n, values:series(n,S.item), flags:ms.map(m=>D.flags[n]?.[m]||null)}];
+  const saveHl = S.hl, saveLab = S.opt.labels;
+  S.hl = new Set([n]); S.opt.labels = "all";
+  tsCache.rowsMean = {[n]: stats(rows[0].values).mean};
+  const opt = trendOption({cats:ms.map(mLabel), rows, item:S.item, dec:it.dec, unit:it.unit});
+  S.hl = saveHl; S.opt.labels = saveLab;
+  opt.grid = {left:44,right:14,top:22,bottom:26};
+  const ch = chartOn("bnChart"); ch.setOption(opt, true); setTimeout(()=>ch.resize(), 30);
+  const last = ms.length-1;
+  document.getElementById("bnItems").innerHTML = ITEMS.map(i=>{
+    const v = series(n,i.code); let k=-1; for(let x=v.length-1;x>=0;x--) if(v[x]!=null){k=x;break;}
+    const sm = stats(v), val = k>=0?v[k]:null, up = val!=null && val>sm.mean+1e-9, dn = val!=null && val<sm.mean-1e-9;
+    return `<div class="c ${i.code===S.item?"on":""}" data-it="${i.code}" title="${i.name}${k>=0?" · "+mLong(ms[k]):""}"><div class="k">${i.code}${k>=0&&k!==last?" ("+mLabel(ms[k])+")":""}</div>
+      <div class="v num">${val!=null?fmt(val,i.dec):"–"} ${up?`<span style="color:${col("above")};font-size:11px">▲</span>`:dn?`<span style="color:${col("below")};font-size:11px">▼</span>`:""}</div></div>`;
+  }).join("");
+  document.querySelectorAll("#bnItems .c").forEach(x=>x.onclick=()=>{ S.item=x.dataset.it; renderHeader(); refresh(); });
+  document.getElementById("bnHl").textContent = S.hl.has(n) ? "강조 해제" : "강조 추가";
+}
+
+/* ───────── 연도별 색도 ───────── */
+function renderYear(){
+  const cur = [...new Set(M.map(m=>+m.slice(0,4)))];
+  const years = [...new Set([...Object.values(D.yearly).flatMap(o=>Object.keys(o).map(Number)), ...cur])].sort();
+  const curName = Object.fromEntries(cur.map(y=>[y, `${y}*`]));
+  const val = (n, y) => { if(cur.includes(y)){ const v = M.map((m,i)=>m.startsWith(y+"-")?D.values[n]?.["색도"]?.[i]:null); const s = stats(v); return s.n? +s.mean.toFixed(2) : null; } return D.yearly[n]?.[y] ?? null; };
+  let names = selectedOrdered().slice();
+  if(S.retired) Object.keys(D.yearly).forEach(n=>{ if(!stByName[n] && !names.includes(n)) names.push(n); });
+  const rows = names.map(n=>({name:n, values:years.map(y=>val(n,y))})).filter(r=>r.values.some(v=>v!=null));
+  const cats = years.map(y=>curName[y]||String(y));
+  const curMonths = M.filter(m=>m.startsWith(cur.at(-1)+"-"));
+  document.getElementById("yrSub").textContent = `${rows.length}개 지점 · * ${cur.at(-1)}년은 ${+curMonths[0].slice(5)}~${+curMonths.at(-1).slice(5)}월 측정결과로 계산`;
+  tsCache.rowsMean = Object.fromEntries(rows.map(r=>[r.name, stats(r.values).mean]));
+  legendHtml(document.getElementById("yrLegend"), rows);
+  const ch = chartOn("yrChart");
+  ch.setOption(trendOption({cats, rows, item:"색도", dec:1, unit:"도"}), true);
+  const t = targetOf("색도");
+  let h = `<thead><tr><th class="l stc">지점</th>${cats.map(c=>`<th>${c}</th>`).join("")}<th>평균</th>${t!=null?`<th>최근년 목표(${t})</th>`:""}</tr></thead><tbody>`;
+  const tsv = [["지점",...cats,"평균"]];
+  const plan = colorPlan(rows.map(r=>r.name));
+  for(const r of rows){ const s = stats(r.values); const lastV = r.values.at(-1);
+    h += `<tr class="${S.hl.has(r.name)?"hl":""}"><td class="l stc" data-st="${r.name}"><span class="dot" style="background:${plan[r.name]?.color||col("base")}"></span>${r.name}${stByName[r.name]?"":' <span class="hint">(중단)</span>'}</td>${r.values.map(v=>{ if(v==null) return `<td></td>`; const up=v>s.mean+1e-9, dn=v<s.mean-1e-9; return `<td class="num ${up?"up":dn?"dn":""}">${fmt(v,1)}${up?'<span class="g">▲</span>':dn?'<span class="g">▼</span>':""}</td>`; }).join("")}
+      <td class="num stat"><b>${fmt(s.mean,1)}</b></td>${t!=null?`<td>${lastV!=null?`<span class="pill ${lastV<=t?"ok":"ng"}">${lastV<=t?"달성":"미달성"}</span>`:""}</td>`:""}</tr>`;
+    tsv.push([r.name, ...r.values.map(v=>v??""), s.mean!=null?+s.mean.toFixed(2):""]); }
+  const tb = document.getElementById("yrTbl"); tb.innerHTML = h + "</tbody>";
+  tb.querySelectorAll("td[data-st]").forEach(x=>{ if(stByName[x.dataset.st]) x.onclick=()=>toggleHl(x.dataset.st); });
+  document.getElementById("yrTblSub").textContent = `단위 도 · ▲▼ 지점의 연도 평균 대비`;
+  tsCache.yrTsv = tsv;
+}
+
+/* ───────── 공통 갱신 ───────── */
+function refresh(){
+  persist();
+  document.getElementById("app").style.setProperty("--hdr", document.getElementById("hdr").offsetHeight+"px");
+  ["ts","heat","map","year"].forEach(v=>document.getElementById("v-"+v).hidden = v!==S.view);
+  document.getElementById("itemSeg").style.visibility = S.view==="year" ? "hidden" : "visible";
+  document.getElementById("kpis").hidden = S.view==="year";
+  renderSide(); renderKpis();
+  if(S.view==="ts") renderTs();
+  if(S.view==="heat") renderHeat();
+  if(S.view==="map") renderMap();
+  if(S.view==="year") renderYear();
+}
+function toast(t){ const el=document.getElementById("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),1800); }
+function tsvText(rows){ return rows.map(r=>r.join("\t")).join("\n"); }
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); toast("복사했습니다. 엑셀에 붙여넣기 하세요."); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("복사했습니다."); }catch(_){ toast("복사가 막혀 있습니다. 표를 직접 선택해 복사하세요."); } ta.remove(); } }
+function saveFile(name, text, type){ try{ const b=new Blob(["﻿"+text],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }catch(e){ toast("이 환경에서는 저장할 수 없습니다. 표 복사를 이용하세요."); } }
+
+function bind(){
+  const $ = id => document.getElementById(id);
+  $("selAll").onclick=()=>{ S.sel=new Set(ST.map(s=>s.name)); refresh(); };
+  $("selNone").onclick=()=>{ S.sel=new Set(); refresh(); };
+  $("hlNone").onclick=()=>{ S.hl=new Set(); refresh(); };
+  $("q").oninput=e=>{ S.q=e.target.value; renderSide(); };
+  $("menuBtn").onclick=()=>{ const s=$("side"); s.classList.toggle("collapsed"); $("menuBtn").setAttribute("aria-expanded", !s.classList.contains("collapsed")); };
+  $("oMarkers").checked=S.opt.markers; $("oMarkers").onchange=e=>{S.opt.markers=e.target.checked; refresh();};
+  $("oLabels").value=S.opt.labels; $("oLabels").onchange=e=>{S.opt.labels=e.target.value; refresh();};
+  $("oMean").checked=S.opt.mean; $("oMean").onchange=e=>{S.opt.mean=e.target.checked; refresh();};
+  $("oLimits").checked=S.opt.limits; $("oLimits").onchange=e=>{S.opt.limits=e.target.checked; refresh();};
+  const mo = M.map((m,i)=>`<option value="${i}">${multiYear?m:mLabel(m)}</option>`).join("");
+  $("oFrom").innerHTML=mo; $("oTo").innerHTML=mo; $("oFrom").value=S.from; $("oTo").value=S.to;
+  $("oFrom").onchange=e=>{ S.from=+e.target.value; if(S.to<S.from){S.to=S.from; $("oTo").value=S.to;} refresh(); };
+  $("oTo").onchange=e=>{ S.to=+e.target.value; if(S.from>S.to){S.from=S.to; $("oFrom").value=S.from;} refresh(); };
+  const setC = () => { $("cAbove").value=toHex(col("above")); $("cBelow").value=toHex(col("below")); $("cBase").value=toHex(col("base")); };
+  setC();
+  [["cAbove","above"],["cBelow","below"],["cBase","base"]].forEach(([id,k])=>$(id).onchange=e=>{ S.colors[k]=e.target.value; refresh(); });
+  $("cReset").onclick=()=>{ S.colors={}; S.custom={}; setC(); refresh(); toast("색상을 기본값으로 되돌렸습니다"); };
+  document.querySelectorAll("#hmMode button").forEach(b=>b.onclick=()=>{ S.heatMode=b.dataset.m; refresh(); });
+  $("mpMonth").onchange=e=>{ S.mapMonth=e.target.value; renderMap(); };
+  $("mpLabels").onchange=e=>{ S.mapLabels=e.target.checked; renderMap(); };
+  $("mpLines").onchange=e=>{ S.mapLines=e.target.checked; renderMap(); };
+  $("bnClose").onclick=()=>{ $("banner").hidden=true; bannerSt=null; };
+  $("bnGo").onclick=()=>{ const n=bannerSt; S.sel.add(n); S.hl.add(n); S.view="ts"; document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected", x.dataset.view==="ts")); refresh(); };
+  $("bnHl").onclick=()=>{ toggleHl(bannerSt); };
+  $("yrRetired").onchange=e=>{ S.retired=e.target.checked; renderYear(); };
+  $("tblCopy").onclick=()=>copyText(tsvText(tsCache.tsv||[]));
+  $("tblCsv").onclick=()=>saveFile(`한탄강_${tsCache.fname||"data"}.csv`, (tsCache.tsv||[]).map(r=>r.map(c=>/[",\n]/.test(String(c))?`"${String(c).replace(/"/g,'""')}"`:c).join(",")).join("\n"), "text/csv");
+  $("yrCopy").onclick=()=>copyText(tsvText(tsCache.yrTsv||[]));
+  $("tsImg").onclick=()=>{ try{ const url = charts.tsChart.getDataURL({pixelRatio:2, backgroundColor:css("--panel")}); const a=document.createElement("a"); a.href=url; a.download=`한탄강_${S.item}_시계열.png`; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast("이 환경에서는 저장할 수 없습니다."); } };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{ setC(); refresh(); });
+  new MutationObserver(()=>{ setC(); refresh(); }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+  addEventListener("resize", ()=>document.getElementById("app").style.setProperty("--hdr", document.getElementById("hdr").offsetHeight+"px"));
+  if(matchMedia("(min-width:981px)").matches) $("side").classList.remove("collapsed");
+}
+
+renderHeader(); bind(); refresh();
+</script>
