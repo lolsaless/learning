@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>헬륨 봄베 사용 가능 시간 계산기</title>
+<style>
+  :root { --bg:#f4f6f8; --card:#fff; --line:#d5dbe1; --main:#1f5f99; --text:#222; --sub:#667; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:20px; background:var(--bg); color:var(--text);
+         font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif; font-size:15px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .desc { color:var(--sub); margin:0 0 16px; font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:14px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  label { display:block; font-size:13px; color:var(--sub); margin-bottom:4px; }
+  input, select { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:15px; font-family:inherit; }
+  .flow-row { display:grid; grid-template-columns:1fr 140px 36px; gap:8px; margin-bottom:8px; }
+  button { padding:8px 14px; border:1px solid var(--main); background:var(--main); color:#fff; border-radius:6px; cursor:pointer; font-size:14px; font-family:inherit; }
+  button.ghost { background:#fff; color:var(--main); }
+  button.del { background:#fff; color:#b33; border-color:#d9a; padding:0; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  .result { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .box { background:#eef4fa; border-radius:6px; padding:10px; }
+  .box .k { font-size:12px; color:var(--sub); }
+  .box .v { font-size:18px; font-weight:bold; margin-top:2px; }
+  .big { grid-column:1 / -1; background:var(--main); color:#fff; }
+  .big .k { color:#cfe2f3; }
+  .big .v { font-size:22px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { border-bottom:1px solid var(--line); padding:6px; text-align:center; }
+  .err { color:#b33; font-weight:bold; }
+  .note { font-size:12px; color:var(--sub); line-height:1.6; }
+  @media (max-width:560px){ .grid,.result{ grid-template-columns:1fr; } .flow-row{ grid-template-columns:1fr 100px 36px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>헬륨 봄베 사용 가능 시간 계산기</h1>
+  <p class="desc">GC-MS · 헤드스페이스용 헬륨 봄베가 출구 압력을 유지할 수 있는 시간을 추정합니다.</p>
+
+  <div class="card">
+    <h2>봄베 / 압력</h2>
+    <div class="grid">
+      <div><label>압력 단위</label>
+        <select id="unit">
+          <option value="psi">psi</option><option value="bar">bar</option>
+          <option value="mpa">MPa</option><option value="kpa">kPa</option><option value="atm">atm</option>
+        </select></div>
+      <div><label>봄베 용적 (L)</label><input id="vol" type="number" value="47" step="any" min="0"></div>
+      <div><label>봄베 현재 게이지압 (<span class="u">psi</span>)</label><input id="pin" type="number" value="600" step="any" min="0"></div>
+      <div><label>출구(레귤레이터 설정) 압력 (<span class="u">psi</span>)</label><input id="pout" type="number" value="80" step="any" min="0"></div>
+      <div><label>교체 여유압 (<span class="u">psi</span>) — 출구압에 더함</label><input id="margin" type="number" value="0" step="any" min="0"></div>
+      <div><label>기준 시각</label><input id="start" type="datetime-local"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>가스 소비 유량 (mL/min, 대기압 기준)</h2>
+    <div id="flows"></div>
+    <button class="ghost" id="addFlow" type="button">+ 유량 항목 추가</button>
+  </div>
+
+  <div class="card">
+    <h2>결과</h2>
+    <div id="msg"></div>
+    <div class="result" id="result"></div>
+    <div id="weekly" style="margin-top:14px"></div>
+  </div>
+
+  <p class="note">
+    계산식: 사용 가능 가스량(L) = 용적(L) × (현재 게이지압 − 출구압 − 여유압) ÷ 14.696 psi,
+    사용 시간 = 가스량 ÷ 총 유량. 온도 일정·이상기체 가정이며, 라인 누출·퍼지 소비는 포함되지 않습니다.
+  </p>
+</div>
+
+<script>
+const P_ATM = 14.696;
+const $ = id => document.getElementById(id);
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function toLocalInput(d){
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtDate(d){
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function addFlow(name="", val=""){
+  const row = document.createElement("div");
+  row.className = "flow-row";
+  row.innerHTML = `<input type="text" class="fname" placeholder="장비명 (예: GC 스플릿)" value="${name}">
+                   <input type="number" class="fval" placeholder="mL/min" step="any" min="0" value="${val}">
+                   <button type="button" class="del" title="삭제">×</button>`;
+  row.querySelector(".del").onclick = () => { row.remove(); calc(); };
+  row.querySelectorAll("input").forEach(i => i.addEventListener("input", calc));
+  $("flows").appendChild(row);
+}
+
+function calc(){
+  const unit = $("unit").value;
+  const k = {psi:1, bar:14.5038, mpa:145.038, kpa:0.145038, atm:14.696}[unit];
+  document.querySelectorAll(".u").forEach(e => e.textContent = $("unit").selectedOptions[0].text);
+
+  const vol = parseFloat($("vol").value);
+  const pin = parseFloat($("pin").value);
+  const pout = parseFloat($("pout").value);
+  const margin = parseFloat($("margin").value) || 0;
+  const flows = [...document.querySelectorAll(".fval")].map(e => parseFloat(e.value) || 0);
+  const q = flows.reduce((a,b)=>a+b, 0);
+  const start = $("start").value ? new Date($("start").value) : new Date();
+
+  const msg = $("msg"), res = $("result"), wk = $("weekly");
+  msg.innerHTML = ""; res.innerHTML = ""; wk.innerHTML = "";
+
+  if (!(vol > 0) || isNaN(pin) || isNaN(pout)) { msg.innerHTML = '<span class="err">용적·압력 값을 확인하세요.</span>'; return; }
+  if (!(q > 0)) { msg.innerHTML = '<span class="err">유량을 1개 이상 입력하세요.</span>'; return; }
+
+  const pinPsi = pin*k, cutPsi = (pout+margin)*k;
+  const usablePsi = Math.max(pinPsi - cutPsi, 0);
+  const usableL = vol * usablePsi / P_ATM;
+  const minutes = usableL * 1000 / q;
+  const end = new Date(start.getTime() + minutes*60000);
+
+  const d = Math.floor(minutes/1440), h = Math.floor((minutes%1440)/60), m = Math.round(minutes%60);
+  const label = $("unit").selectedOptions[0].text;
+
+  res.innerHTML = `
+    <div class="box big"><div class="k">압력 유지 종료 예상 시각</div><div class="v">${fmtDate(end)} 경</div></div>
+    <div class="box"><div class="k">사용 가능 시간</div><div class="v">${d}일 ${h}시간 ${m}분</div></div>
+    <div class="box"><div class="k">(시간 / 일)</div><div class="v">${(minutes/60).toFixed(1)} h / ${(minutes/1440).toFixed(2)} 일</div></div>
+    <div class="box"><div class="k">사용 가능 가스량 (1 atm 환산)</div><div class="v">${usableL.toFixed(1)} L</div></div>
+    <div class="box"><div class="k">총 유량</div><div class="v">${q.toLocaleString()} mL/min</div></div>`;
+
+  if (usablePsi === 0) msg.innerHTML = '<span class="err">현재 압력이 이미 출구압(+여유압) 이하입니다.</span>';
+
+  let rows = "";
+  for (let w = 0; w*7*1440 <= minutes; w++){
+    const p = (pinPsi - q*(w*7*1440)/1000*P_ATM/vol)/k;
+    rows += `<tr><td>+${w}주 (${fmtDate(new Date(start.getTime()+w*7*86400000)).slice(0,10)})</td><td>${p.toFixed(1)} ${label}</td></tr>`;
+  }
+  wk.innerHTML = `<h2>주 단위 예상 게이지압</h2><table><tr><th>시점</th><th>봄베 압력</th></tr>${rows}</table>`;
+}
+
+["unit","vol","pin","pout","margin","start"].forEach(id => $(id).addEventListener("input", calc));
+$("addFlow").onclick = () => addFlow();
+$("start").value = toLocalInput(new Date());
+addFlow("GC 합계(예시)", 50);
+calc();
+</script>
+</body>
+</html>
