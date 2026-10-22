@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>검사의뢰 공문 추출기</title>
+<style>
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --line: #dfe4ec; --line-strong: #c9d1dd;
+  --text: #1d2633; --muted: #667085; --head: #1f2b3a; --head-text: #f2f5f9;
+  --accent: #1f5fae; --accent-soft: #e6eefa; --ok: #2e7d4f; --ok-soft: #e7f4ec;
+  --warn: #8a5a00; --warn-soft: #fff4cc; --err: #b42318; --err-soft: #fdecea; --dup-soft: #f0f1f3;
+  --th: #eef2f7; --sel: #fff9e6;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; font-size: 13px; color: var(--text); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+.topbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--head); color: var(--head-text); flex: none; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; white-space: nowrap; }
+.brand .ver { font-weight: 400; font-size: 11px; opacity: .6; margin-left: 4px; }
+.folder { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.folder-label { font-size: 11px; opacity: .65; white-space: nowrap; }
+#folderName { background: rgba(255,255,255,.1); padding: 4px 10px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+.top-actions { display: flex; gap: 6px; }
+.topbar .btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.18); color: #fff; }
+.topbar .btn:hover:not(:disabled) { background: rgba(255,255,255,.22); }
+
+.btn { border: 1px solid var(--line-strong); background: var(--panel); padding: 6px 12px; border-radius: 5px; cursor: pointer; white-space: nowrap; line-height: 1.2; }
+.btn:hover:not(:disabled) { background: #f0f3f8; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: #194f92; }
+.btn.danger { background: var(--err); border-color: var(--err); color: #fff; }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 4px 9px; font-size: 12px; }
+.btn.link { border: none; background: none; color: var(--accent); padding: 2px 4px; text-decoration: underline; }
+
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; }
+.toolbar input[type=search] { width: 300px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 5px; }
+.toolbar select { padding: 5px 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: #fff; }
+.chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+.spacer { flex: 1; }
+.colpick { position: relative; }
+.popover { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px rgba(16,24,40,.14); padding: 10px; z-index: 30; width: 360px; }
+.popover .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-bottom: 8px; }
+.popover .cols label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.popover .pop-actions { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+
+.main { flex: 1; display: flex; min-height: 0; }
+.tablewrap { flex: 1; overflow: auto; position: relative; background: var(--panel); }
+.empty { padding: 48px 32px; color: var(--muted); max-width: 760px; line-height: 1.7; }
+.empty h2 { color: var(--text); font-size: 18px; margin: 0 0 12px; }
+.empty ol { padding-left: 20px; margin: 8px 0 20px; }
+.empty .btn { margin-right: 6px; }
+.notice { border: 1px solid #f3d27a; background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 14px 16px; }
+
+table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+thead th { position: sticky; top: 0; z-index: 5; background: var(--th); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line); padding: 7px 8px; text-align: left; font-weight: 600; white-space: nowrap; cursor: pointer; user-select: none; }
+thead th.sorted::after { content: attr(data-dir); color: var(--accent); margin-left: 4px; font-size: 10px; }
+thead th.c-chk, td.c-chk { position: sticky; left: 0; z-index: 4; text-align: center; width: 54px; min-width: 54px; }
+thead th.c-chk { z-index: 6; cursor: default; }
+td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 5px 8px; vertical-align: top; background: #fff; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.wrap { white-space: normal; }
+td.c-chk { background: #fbfcfd; }
+tr.grp-first td { border-top: 1px solid var(--line-strong); }
+tbody tr:hover td { background: #f6f9fd; }
+tr.is-checked td, tr.is-checked td.c-chk { background: var(--ok-soft); }
+tr.is-done td { color: #475467; }
+tr.is-dup td { background: var(--dup-soft); color: #8a94a6; }
+tr.is-err td { background: var(--err-soft); }
+tr.is-sel td { background: var(--sel) !important; }
+td.cell-warn { background: var(--warn-soft) !important; color: var(--warn); font-weight: 600; }
+td.c-warn { color: var(--warn); max-width: 360px; }
+td.c-warn.err { color: var(--err); }
+.badge { display: inline-block; font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); margin-left: 4px; vertical-align: 1px; }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--ok); }
+.muted { color: var(--muted); }
+
+.detail { width: 460px; flex: none; border-left: 1px solid var(--line-strong); background: #fbfcfe; display: flex; flex-direction: column; min-height: 0; }
+.detail-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: flex-start; background: #fff; }
+.detail-head h3 { margin: 0; font-size: 14px; line-height: 1.45; flex: 1; }
+.detail-body { padding: 12px 14px; overflow: auto; flex: 1; }
+.detail-foot { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; background: #fff; }
+.detail dl { display: grid; grid-template-columns: 88px 1fr; gap: 4px 10px; margin: 0 0 12px; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; word-break: break-all; }
+.detail h4 { margin: 16px 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
+.detail .warnlist { margin: 0 0 8px; padding: 8px 10px 8px 26px; background: var(--warn-soft); color: var(--warn); border-radius: 5px; }
+.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini th, .mini td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; white-space: normal; max-width: none; position: static; background: #fff; }
+.mini th { background: var(--th); font-weight: 600; cursor: default; }
+.paras p { margin: 0 0 6px; line-height: 1.6; }
+.paras mark { background: #ffe58a; padding: 0 1px; }
+
+.bottombar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--panel); border-top: 1px solid var(--line-strong); flex: none; }
+.stats { color: var(--muted); white-space: nowrap; }
+.stats b { color: var(--text); }
+
+.busy { position: fixed; inset: 0; background: rgba(15,23,42,.28); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.busy-box { background: #fff; padding: 22px 30px; border-radius: 8px; display: flex; gap: 14px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+.spinner { width: 22px; height: 22px; border: 3px solid #d0d7e2; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.modal { position: fixed; inset: 0; background: rgba(15,23,42,.35); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.modal-box { background: #fff; border-radius: 8px; width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 64px); display: flex; flex-direction: column; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+.modal-box h3 { margin: 0; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.modal-body { padding: 14px 18px; overflow: auto; line-height: 1.65; }
+.modal-body ul.flist { max-height: 240px; overflow: auto; background: #f7f9fc; border: 1px solid var(--line); border-radius: 5px; padding: 8px 8px 8px 26px; margin: 8px 0; }
+.modal-body .res-ok { color: var(--ok); }
+.modal-body .res-err { color: var(--err); }
+.modal-body h4 { margin: 14px 0 4px; }
+.modal-actions { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+
+.toast { position: fixed; right: 20px; bottom: 64px; max-width: 460px; background: #1f2b3a; color: #fff; padding: 10px 14px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 70; line-height: 1.5; }
+.toast.err { background: var(--err); }
+
+/* v1.1 상세 패널: 추출 결과 / 원본 보기 / 나란히 */
+.detail.mode-ext { width: 460px; }
+.detail.mode-org { width: min(860px, 62vw); }
+.detail.mode-side { width: min(1150px, 64vw); }
+.detail-head { align-items: center; }
+.detail-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; flex: none; }
+.seg-btn { border: none; background: #fff; padding: 4px 10px; cursor: pointer; font-size: 12px; border-right: 1px solid var(--line); }
+.seg-btn:last-child { border-right: none; }
+.seg-btn.on { background: var(--accent); color: #fff; font-weight: 600; }
+.detail-body { padding: 0; display: flex; min-height: 0; overflow: hidden; }
+.pane { overflow: auto; min-height: 0; }
+.pane-ext { padding: 12px 14px; flex: 1; }
+.mode-side .pane-ext { flex: 0 0 36%; min-width: 300px; border-right: 1px solid var(--line-strong); }
+.pane-org { flex: 1; display: flex; flex-direction: column; background: #80868f; }
+.pv-tools { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f3f5f8; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+.pv-tools .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 12px; }
+.pv { padding: 12px; flex: 1; }
+.pv .odt-page { box-shadow: 0 2px 10px rgba(0,0,0,.35); padding: .8cm 1cm; }
+.pv-msg { color: #fff; padding: 20px; }
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">검사의뢰 공문 추출기 <span class="ver">v1.1</span></div>
+  <div class="folder" id="folderBox"><span class="folder-label">공문 폴더</span><span id="folderName">연결 안 됨</span></div>
+  <div class="top-actions">
+    <button id="btnPick" class="btn">공문 폴더 선택</button>
+    <button id="btnRefresh" class="btn" disabled>새로고침</button>
+    <button id="btnHelp" class="btn ghost" title="사용 방법">도움말</button>
+  </div>
+</header>
+
+<section class="toolbar" id="toolbar" hidden>
+  <input id="fSearch" type="search" placeholder="검색 (시료번호·기관·항목·파일명 등)" autocomplete="off">
+  <select id="fOrg"><option value="">기관 전체</option></select>
+  <select id="fState">
+    <option value="pending">처리 대기 공문 전체</option>
+    <option value="unchecked">완료 체크 안 한 공문</option>
+    <option value="checked">완료 체크한 공문</option>
+    <option value="done">성적처리완료 폴더</option>
+  </select>
+  <label class="chk"><input id="fWarn" type="checkbox"> 확인필요만</label>
+  <div class="spacer"></div>
+  <div class="colpick">
+    <button id="btnCols" class="btn small">열 선택</button>
+    <div id="colMenu" class="popover" hidden></div>
+  </div>
+</section>
+
+<main class="main">
+  <div class="tablewrap" id="tableWrap">
+    <div id="emptyBox" class="empty"></div>
+    <table id="grid" hidden><thead></thead><tbody></tbody></table>
+  </div>
+  <aside id="detail" class="detail" hidden></aside>
+</main>
+
+<footer class="bottombar" id="bottombar" hidden>
+  <button id="btnDone" class="btn primary" disabled>완료 체크한 공문 처리 완료 (0)</button>
+  <button id="btnExcel" class="btn">엑셀 저장</button>
+  <button id="btnStd" class="btn ghost">기준표 양식 만들기</button>
+  <div class="spacer"></div>
+  <div id="stats" class="stats"></div>
+</footer>
+
+<div id="busy" class="busy" hidden><div class="busy-box"><div class="spinner"></div><div id="busyText">공문 읽는 중…</div></div></div>
+<div id="modal" class="modal" hidden><div class="modal-box"><h3 id="modalTitle"></h3><div id="modalBody" class="modal-body"></div><div class="modal-actions"><button id="modalCancel" class="btn">취소</button><button id="modalOk" class="btn primary">확인</button></div></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* 검사의뢰 공문(ODT) 추출 엔진 v1.1 — 외부 라이브러리 없음 (브라우저·Node 공용) */
+(function (global) {
+'use strict';
+
+/* ───────── 1. ZIP 읽기 ───────── */
+// inflateRaw: (Uint8Array) => Promise<Uint8Array>   브라우저: DecompressionStream('deflate-raw') / Node: zlib
+async function unzipEntry(bytes, name, inflateRaw, optional) {
+  const b = await unzipBytes(bytes, name, inflateRaw, optional);
+  return b == null ? null : new TextDecoder('utf-8').decode(b);
+}
+async function unzipBytes(bytes, name, inflateRaw, optional) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIP 구조가 아님(손상되었거나 ODT 파일이 아님)');
+  const n = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const td = new TextDecoder('utf-8');
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const fl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    const lo = dv.getUint32(p + 42, true);
+    const fn = td.decode(bytes.subarray(p + 46, p + 46 + fl));
+    if (fn === name) {
+      const lfl = dv.getUint16(lo + 26, true), lel = dv.getUint16(lo + 28, true);
+      const data = bytes.subarray(lo + 30 + lfl + lel, lo + 30 + lfl + lel + csize);
+      return method === 0 ? data : await inflateRaw(data);
+    }
+    p += 46 + fl + el + cl;
+  }
+  if (optional) return null;
+  throw new Error(name + ' 없음(ODT 파일이 아님)');
+}
+
+/* ───────── 2. XML 파서 (경량) ───────── */
+const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const dec = t => t.indexOf('&') < 0 ? t : t.replace(/&(#x[0-9a-fA-F]+|#\d+|\w+);/g, (m, e) =>
+  e[0] === '#' ? String.fromCodePoint(e[1] === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENT[e] != null ? ENT[e] : m));
+const local = q => { const k = q.indexOf(':'); return k < 0 ? q : q.slice(k + 1); };
+function parseXML(s) {
+  const root = { n: '#root', a: {}, c: [] }, st = [root]; let i = 0; const L = s.length;
+  while (i < L) {
+    const lt = s.indexOf('<', i); if (lt < 0) break;
+    if (lt > i) st[st.length - 1].c.push(dec(s.slice(i, lt)));
+    const c1 = s[lt + 1];
+    if (c1 === '?') { i = s.indexOf('?>', lt) + 2; continue; }
+    if (c1 === '!') {
+      if (s.startsWith('<!--', lt)) i = s.indexOf('-->', lt) + 3;
+      else if (s.startsWith('<![CDATA[', lt)) { const e = s.indexOf(']]>', lt); st[st.length - 1].c.push(s.slice(lt + 9, e)); i = e + 3; }
+      else i = s.indexOf('>', lt) + 1;
+      continue;
+    }
+    let j = lt + 1, q = null;
+    for (; j < L; j++) { const ch = s[j]; if (q) { if (ch === q) q = null; } else if (ch === '"' || ch === "'") q = ch; else if (ch === '>') break; }
+    let body = s.slice(lt + 1, j); i = j + 1;
+    if (body[0] === '/') { if (st.length > 1) st.pop(); continue; }
+    let self = false; if (body.endsWith('/')) { self = true; body = body.slice(0, -1); }
+    const qn = /^\S+/.exec(body)[0];
+    const a = {}, re = /([^\s=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g; re.lastIndex = qn.length; let m;
+    while ((m = re.exec(body))) a[local(m[1])] = dec(m[2] != null ? m[2] : m[3]);
+    const node = { n: local(qn), a, c: [] };
+    st[st.length - 1].c.push(node); if (!self) st.push(node);
+  }
+  return root;
+}
+const kids = (e, n) => e.c.filter(x => typeof x !== 'string' && (!n || x.n === n));
+function walk(e, fn) { for (const x of e.c) { if (typeof x === 'string') continue; if (fn(x) === false) continue; walk(x, fn); } }
+function findAll(e, n) { const r = []; walk(e, x => { if (x.n === n) r.push(x); }); return r; }
+function has(e, n) { let f = false; walk(e, x => { if (x.n === n) f = true; }); return f; }
+const textAll = e => e.c.map(x => typeof x === 'string' ? x : textAll(x)).join('');
+
+/* ───────── 3. 텍스트 ───────── */
+function inlineText(e) {
+  let out = '';
+  for (const x of e.c) {
+    if (typeof x === 'string') { out += x.replace(/[\t\r\n ]+/g, ' '); continue; }
+    switch (x.n) {
+      case 's': out += ' '.repeat(+x.a.c || 1); break;
+      case 'tab': out += '\t'; break;
+      case 'line-break': out += '\n'; break;
+      case 'frame': case 'note': case 'annotation': case 'table': break;
+      default: out += inlineText(x);
+    }
+  }
+  return out;
+}
+function blockLines(e) {
+  const lines = [];
+  for (const x of kids(e)) {
+    if (x.n === 'p' || x.n === 'h') inlineText(x).split('\n').forEach(t => lines.push(t));
+    else if (x.n === 'list' || x.n === 'list-item' || x.n === 'section') lines.push(...blockLines(x));
+  }
+  return lines.map(t => t.trim()).filter(Boolean);
+}
+const squash = t => (t || '').replace(/\s+/g, '');
+function spacedName(t) {
+  const toks = (t || '').trim().split(/\s+/).filter(Boolean);
+  if (!toks.length) return '';
+  return toks.every(x => x.length === 1) ? toks.join('') : toks.join(' ');
+}
+
+/* ───────── 4. 표 → 격자 (병합 처리) ───────── */
+function tableRows(tbl) {
+  const rows = [];
+  (function collect(e) {
+    for (const x of kids(e)) {
+      if (x.n === 'table-row') { const rep = Math.min(+x.a['number-rows-repeated'] || 1, 3); for (let k = 0; k < rep; k++) rows.push(x); }
+      else if (x.n === 'table-header-rows' || x.n === 'table-rows' || x.n === 'table-row-group') collect(x);
+    }
+  })(tbl);
+  return rows;
+}
+function buildGrid(tbl) {
+  const rows = tableRows(tbl), G = [];
+  let ncols = 0;
+  rows.forEach((row, r) => {
+    G[r] = G[r] || []; let c = 0;
+    for (const cell of kids(row)) {
+      if (cell.n !== 'table-cell' && cell.n !== 'covered-table-cell') continue;
+      const rep = Math.min(+cell.a['number-columns-repeated'] || 1, 64);
+      for (let k = 0; k < rep; k++, c++) {
+        if (cell.n !== 'table-cell') continue;
+        if (G[r][c]) continue;
+        const o = { r, c, rs: +cell.a['number-rows-spanned'] || 1, cs: +cell.a['number-columns-spanned'] || 1,
+          lines: blockLines(cell), nested: has(cell, 'table') };
+        o.text = o.lines.join('\n');
+        for (let dr = 0; dr < o.rs; dr++) for (let dc = 0; dc < o.cs; dc++) {
+          G[r + dr] = G[r + dr] || []; if (!G[r + dr][c + dc]) G[r + dr][c + dc] = o;
+        }
+      }
+      ncols = Math.max(ncols, c);
+    }
+  });
+  return { G, nrows: rows.length, ncols };
+}
+function rowOrigins(grid, r) {
+  const out = [], seen = new Set();
+  for (const o of grid.G[r] || []) if (o && !seen.has(o)) { seen.add(o); out.push(o); }
+  return out;
+}
+const gridText = grid => grid.G.map((_, r) => rowOrigins(grid, r).map(o => o.text).join('|')).join('\n');
+
+/* ───────── 5. 날짜 ───────── */
+const DATE_RE = /(?:(\d{4})|'(\d{2}))\s*(?:[.\-\/]|년)\s*(\d{1,2})\s*(?:[.\-\/]|월)\s*(\d{1,2})(?!\d)\s*(?:\.|일)?/;
+const pad = n => String(n).padStart(2, '0');
+function parseDate(s) {
+  if (!s) return null;
+  const m = DATE_RE.exec(s); if (!m) return null;
+  const y = m[1] || ('20' + m[2]), mo = +m[3], d = +m[4];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const rest = s.slice(m.index + m[0].length);
+  const t = /(\d{1,2})\s*:\s*(\d{2})/.exec(rest);
+  return { date: `${y}-${pad(mo)}-${pad(d)}`, time: t ? `${pad(t[1])}:${t[2]}` : '' };
+}
+function allDates(s) {
+  const re = new RegExp(DATE_RE.source, 'g'), out = []; let m;
+  while ((m = re.exec(s))) { const p = parseDate(m[0]); if (p) out.push({ ...p, index: m.index, end: m.index + m[0].length }); }
+  return out;
+}
+
+/* ───────── 6. 사전 (설정) — 새 표기가 나오면 여기에 한 줄 추가 ───────── */
+const ITEM_DICT = {
+  'bod': 'BOD', 'toc': 'TOC', 'ss': 'SS', 'cod': 'COD',
+  't-n': 'T-N', 'tn': 'T-N', '총질소': 'T-N',
+  't-p': 'T-P', 'tp': 'T-P', '총인': 'T-P',
+  'n-h(광)': 'n-H(광)', 'n-h(광유류)': 'n-H(광)', '노르말헥산(광유류)': 'n-H(광)', '노르말헥산(광)': 'n-H(광)',
+  'n-h(동식)': 'n-H(동식)', 'n-h(동식물유류)': 'n-H(동식)', '노르말헥산(동식물유류)': 'n-H(동식)',
+  'abs': 'ABS', '음이온계면활성제': 'ABS',
+  '생태독성': '생태독성', '색도': '색도', '철': '철', 'ph': 'pH', '수소이온농도': 'pH',
+  '대장균군': '대장균군', '총대장균군': '총대장균군', '페놀류': '페놀류', '시안': '시안', '구리': '구리', '아연': '아연',
+  '납': '납', '카드뮴': '카드뮴', '크롬': '크롬', '6가크롬': '6가크롬', '비소': '비소', '수은': '수은', '망간': '망간', '불소': '불소',
+};
+const SIDO_TITLE = { '시': '시장', '군': '군수', '도': '도지사' };
+const ORG_EXCEPTIONS = {}; // 예: { '○○사업소': { 의뢰기관: '○○시', 의뢰자: '○○시장' } }
+const REGION_CODE = /^(가|나|다|라|청정|특례|특정)(지역)?$/;
+function normItem(tok) { return ITEM_DICT[String(tok || '').toLowerCase().replace(/\s+/g, '')] || null; }
+
+/* ───────── 7. 헤더 분류 ───────── */
+function classify(h) {
+  const t = squash(h);
+  if (!t) return null;
+  if (/^(연번|순번|번호|no\.?)$/i.test(t)) return 'seq';
+  if (/(시료|검체|지시|의뢰)번호/.test(t)) return 'sampleNo';
+  if (/^(시료|검체)(명|코드|no\.?|명칭)$/i.test(t)) return 'sampleName'; // v1.1: '시료명' 등 — 값이 번호 형태면 시료번호로 사용
+  if (/항목/.test(t)) return /기준/.test(t) ? 'itemsStd' : 'items';
+  if (/(채취|채수)(일|일자|일시|날짜)/.test(t)) return 'date';
+  if (/지역/.test(t)) return 'region';
+  if (/기준/.test(t)) return 'std';
+  if (/(시료량|채취량|채수량|수량)/.test(t) || t === '시료') return 'qty';
+  if (/(업종|배출시설|성상|건물용도)/.test(t)) return 'industry';
+  if (/지점/.test(t)) return 'point';
+  if (/비고/.test(t)) return 'note';
+  return 'other';
+}
+
+/* ───────── 8. 상단·하단 ───────── */
+function parseHeader(tables) {
+  for (const t of tables) {
+    const g = buildGrid(t);
+    let rRecv = -1, title = '', org = '';
+    for (let r = 0; r < g.nrows; r++) {
+      const os = rowOrigins(g, r);
+      os.forEach((o, k) => {
+        if (squash(o.text) === '수신' && rRecv < 0) rRecv = r;
+        if (squash(o.text) === '제목' && os[k + 1]) title = os[k + 1].lines.join(' ');
+      });
+    }
+    if (rRecv < 0 || !title) continue;
+    for (let r = 0; r < rRecv; r++) for (const o of rowOrigins(g, r)) {
+      const s = squash(o.text);
+      if (s && /^[가-힣]+$/.test(s) && s.length <= 15) org = s;
+    }
+    return { org, title: title.trim() };
+  }
+  return null;
+}
+function parseFooter(tables) {
+  for (const t of tables) {
+    const g = buildGrid(t);
+    let rSi = -1, rCoop = -1;
+    for (let r = 0; r < g.nrows; r++) for (const o of rowOrigins(g, r)) {
+      const s = squash(o.text);
+      if (s === '시행' && rSi < 0) rSi = r;
+      if (s === '협조자' && rCoop < 0) rCoop = r;
+    }
+    if (rSi < 0) continue;
+    const f = {};
+    const nextVals = (r, label) => { const os = rowOrigins(g, r).filter(o => o.text); const k = os.findIndex(o => squash(o.text) === label); return k < 0 ? [] : os.slice(k + 1).map(o => o.text.trim()); };
+    let v = nextVals(rSi, '시행'); f.siNo = v[0] || ''; f.siDate = v[1] || '';
+    v = nextVals(rSi, '접수'); f.rcNo = v[0] || ''; f.rcDate = v[1] || '';
+    if (rCoop > 1) {
+      const names = rowOrigins(g, rCoop - 1).filter(o => o.r === rCoop - 1 && o.text && !/결|\d/.test(o.text));
+      const posRow = rowOrigins(g, rCoop - 2).filter(o => o.r === rCoop - 2 && o.text);
+      f.drafter = names[0] ? names[0].text.trim() : '';
+      f.drafterPos = posRow[0] ? posRow[0].text.trim() : '';
+      for (let r = 0; r < rCoop - 2; r++) for (const o of rowOrigins(g, r)) if (o.text && !o.nested) f.sender = spacedName(o.text);
+    }
+    for (let r = 0; r < g.nrows; r++) {
+      const os = rowOrigins(g, r).filter(o => o.text).map(o => o.text.trim());
+      if (os[0] === '우') { f.zip = os[1] || ''; f.addr = os[2] || ''; }
+      const k = os.indexOf('전화번호'); if (k >= 0) f.tel = os[k + 1] || '';
+      const kf = os.indexOf('팩스번호'); if (kf >= 0) f.fax = os[kf + 1] || '';
+      const em = os.find(x => x.includes('@')); if (em) f.email = em;
+    }
+    return f;
+  }
+  return null;
+}
+function senderFallback(body, posFirst) {
+  const cells = [];
+  walk(body, x => { if (x.n === 'table-cell' && !has(x, 'table')) { const t = blockLines(x).join(' '); if (t) cells.push(t); return false; } });
+  const k = cells.findIndex(t => squash(t) === squash(posFirst));
+  return k > 0 ? spacedName(cells[k - 1]) : '';
+}
+function deriveOrg(orgTop, addr) {
+  if (ORG_EXCEPTIONS[orgTop]) return ORG_EXCEPTIONS[orgTop];
+  let org = '';
+  if (/^[가-힣]{1,4}(시|군)$/.test(orgTop) || /^[가-힣]{1,3}도$/.test(orgTop)) org = orgTop;
+  else { const m = /(?:^|\s)([가-힣]{1,4}(?:시|군))(?=\s)/.exec(addr || ''); if (m) org = m[1]; }
+  if (!org) return { 의뢰기관: orgTop, 의뢰자: '' };
+  return { 의뢰기관: org, 의뢰자: org.slice(0, -1) + SIDO_TITLE[org.slice(-1)] };
+}
+
+/* ───────── 9. 시료 표 ───────── */
+// v1.1: 시료번호처럼 생긴 값인지 (예: 동두천-10-1, 2-10-401~402, TMS 2-10-3 (A~D), 하천수 2-5-9-46)
+const looksLikeSampleNo = v => {
+  const s = String(v || '').replace(/\s*\n\s*/g, '').trim();
+  if (!s || s.length > 40 || DATE_RE.test(s)) return false;
+  return /\d+\s*-\s*\d+/.test(s);
+};
+function dataColumnValues(g, hr, o) {
+  const vals = [];
+  for (let r = hr + 1; r < g.nrows; r++) { const c = g.G[r] && g.G[r][o.c]; if (c && c.r === r && c.text) vals.push(c.text); }
+  return vals;
+}
+const codeRatio = vals => vals.length ? vals.filter(looksLikeSampleNo).length / vals.length : 0;
+// 시료번호 열 결정: ① 제목에 '번호' ② '시료명' 등이면서 값이 번호 형태 ③ 항목 열이 있는 표에서 값이 번호 형태인 열
+function pickSampleCol(g, hr) {
+  const os = rowOrigins(g, hr);
+  const byNo = os.find(o => classify(o.text) === 'sampleNo');
+  if (byNo) return { col: byNo, how: 'header' };
+  const named = os.find(o => classify(o.text) === 'sampleName' && codeRatio(dataColumnValues(g, hr, o)) >= 0.6);
+  if (named) return { col: named, how: 'name' };
+  if (!os.some(o => /^items/.test(classify(o.text) || ''))) return null;
+  let best = null, bestR = 0;
+  for (const o of os) {
+    const f = classify(o.text);
+    if (/^items/.test(f || '') || f === 'date' || f === 'seq') continue;
+    const r = codeRatio(dataColumnValues(g, hr, o));
+    if (r > bestR) { best = o; bestR = r; }
+  }
+  return best && bestR >= 0.6 ? { col: best, how: 'content' } : null;
+}
+function findSampleTables(tables) {
+  const out = [], sigs = new Set();
+  for (const t of tables) {
+    const g = buildGrid(t);
+    for (let r = 0; r < Math.min(3, g.nrows); r++) {
+      const pick = pickSampleCol(g, r);
+      if (!pick) continue;
+      const sig = gridText(g); if (sigs.has(sig)) break; sigs.add(sig);
+      out.push({ g, hr: r, sampleCol: pick.col, how: pick.how }); break;
+    }
+  }
+  return out;
+}
+function joinNo(lines) {
+  let s = '';
+  for (const l of lines) s += (s && !/[-~]$/.test(s) && !/^[-~]/.test(l) ? ' ' : '') + l;
+  return s.trim();
+}
+function readSampleTable({ g, hr, sampleCol }) {
+  const heads = rowOrigins(g, hr).map(o => {
+    let f = classify(o.text);
+    if (sampleCol) f = o === sampleCol ? 'sampleNo' : (f === 'sampleNo' ? 'other' : f);
+    if (f === 'sampleName') f = 'industry'; // 시료번호로 쓰지 않은 '시료명'은 성상 정보로 보관
+    return { o, f, name: spacedName(o.text.replace(/\n/g, ' ')) };
+  });
+  const samples = [];
+  const raw = [];
+  for (let r = hr; r < g.nrows; r++) raw.push(heads.map(h => {
+    const set = []; for (let c = h.o.c; c < h.o.c + h.o.cs; c++) { const o = g.G[r] && g.G[r][c]; if (o && !set.includes(o)) set.push(o); }
+    return set.map(o => o.lines.join(' ')).join(' / ');
+  }));
+  const valOf = (r, h) => {
+    const set = []; for (let c = h.o.c; c < h.o.c + h.o.cs; c++) { const o = g.G[r] && g.G[r][c]; if (o && o.r !== hr && !set.includes(o)) set.push(o); }
+    return set;
+  };
+  for (let r = hr + 1; r < g.nrows; r++) {
+    const rec = {}; let noCell = null, any = false;
+    for (const h of heads) {
+      if (!h.f || h.f === 'seq') continue;
+      const cells = valOf(r, h);
+      const text = cells.map(o => o.text).filter(Boolean).join('\n');
+      if (h.f === 'sampleNo') { noCell = cells[0] || null; rec._noLines = noCell ? noCell.lines : []; }
+      if (text) any = true;
+      if (h.f === 'other') { if (text) (rec.other = rec.other || []).push(h.name + ': ' + text.replace(/\n/g, ' ')); }
+      else rec[h.f] = rec[h.f] ? rec[h.f] + '\n' + text : text;
+    }
+    if (!any) continue;
+    const cont = !noCell || !noCell.text || noCell.r < r;
+    if (/^[-–—]$/.test((rec.note || '').trim())) rec.note = '';
+    if (!rec.region && REGION_CODE.test(squash(rec.note))) { rec.region = rec.note.trim(); rec.note = ''; }
+    const group = { items: rec.items || rec.itemsStd || '', std: rec.std || '', region: rec.region || '' };
+    if (cont) { if (samples.length) samples[samples.length - 1].groups.push(group); continue; }
+    samples.push({ rawNo: joinNo(rec._noLines || []), groups: [group], date: rec.date || '', qty: rec.qty || '',
+      industry: rec.industry || '', point: rec.point || '', note: rec.note || '', other: (rec.other || []).join(' / ') });
+  }
+  return { headers: heads.map(h => h.name), raw, samples };
+}
+function expandNo(raw) {
+  let s = raw.replace(/\s*\n\s*/g, '').trim();
+  let subs = null;
+  const sm = /\(\s*([A-Za-z])\s*~\s*([A-Za-z])\s*\)\s*$/.exec(s);
+  if (sm) {
+    s = s.slice(0, sm.index).trim(); subs = [];
+    for (let c = sm[1].toUpperCase().charCodeAt(0); c <= sm[2].toUpperCase().charCodeAt(0); c++) subs.push(String.fromCharCode(c));
+  }
+  let bases = [s];
+  const rm = /^(.*?)(\d+)\s*~\s*(?:[0-9A-Za-z가-힣\-]*-)?(\d+)$/.exec(s);
+  if (rm) { const a = +rm[2], b = +rm[3]; if (b > a && b - a < 200) { bases = []; for (let k = a; k <= b; k++) bases.push(rm[1] + k); } }
+  const out = [];
+  for (const b of bases) { if (subs) subs.forEach(x => out.push(`${b}(${x})`)); else out.push(b); }
+  return { list: out, baseCount: bases.length };
+}
+function parseItems(text) {
+  let region = '';
+  let s = (text || '').replace(/[·•▪◦]/g, ',');
+  const ar = /(?:→|->|⇒)\s*([^,\n]+)/.exec(s);
+  if (ar) { region = ar[1].trim(); s = s.slice(0, ar.index) + s.slice(ar.index + ar[0].length); }
+  s = s.replace(/\n/g, ',');
+  const toks = []; let depth = 0, cur = '';
+  for (const ch of s) {
+    if (ch === '(' || ch === '（') depth++; else if (ch === ')' || ch === '）') depth = Math.max(0, depth - 1);
+    if ((ch === ',' || ch === '，' || ch === '、') && depth === 0) { toks.push(cur); cur = ''; } else cur += ch;
+  }
+  toks.push(cur);
+  const items = [];
+  for (let t of toks) {
+    t = t.replace(/^[\s\-–]+/, '').trim(); if (!t) continue;
+    const sp = splitItemStd(t);
+    t = sp.name; const std = sp.std;
+    const name = normItem(t);
+    items.push({ raw: t, name: name || t, known: !!name, std });
+  }
+  return { items, region };
+}
+const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/* v1.1: 항목 안의 기준 표기 — BOD(20), BOD(20이하), BOD(20 ㎎/L 이하), BOD(기준 20), BOD(≤20), T-P(0.5미만),
+   pH(5.8~8.6), 대장균군(3,000개/mL), BOD 20이하, SS: 20  → 이름과 기준값 분리 */
+const STD_UNIT = '(?:mg\\s*/\\s*[lLℓ]|㎎\\s*/\\s*[lLℓ]|㎎/ℓ|mg/ℓ|ppm|ppb|도|TU|개\\s*/\\s*(?:100\\s*)?m[lL]|%)';
+const STD_NUM = '(\\d[\\d.,]*(?:\\s*[~∼-]\\s*\\d[\\d.,]*)?)';
+const STD_PAREN = new RegExp('^(.*?\\S)\\s*[(（]\\s*(?:기준\\s*[:：]?\\s*)?(≤|<=|<|이하|미만)?\\s*' + STD_NUM + '\\s*' + STD_UNIT + '?\\s*(이하|미만)?\\s*[)）]$');
+const STD_PLAIN = new RegExp('^(.*?\\S)\\s*([:：])?\\s*(≤|<=|<)?\\s*' + STD_NUM + '\\s*' + STD_UNIT + '?\\s*(이하|미만)?$');
+const fmtStd = (num, q) => num.replace(/\s+/g, '').replace(/∼/g, '~') + (q === '미만' || q === '<' ? ' 미만' : '');
+function splitItemStd(t) {
+  let m = STD_PAREN.exec(t);
+  if (m && !/^[\d.,]+$/.test(m[1])) return { name: m[1].trim(), std: fmtStd(m[3], m[2] || m[4]) };
+  m = STD_PLAIN.exec(t);
+  if (m && normItem(m[1].trim()) && (m[2] || m[3] || m[5] || /\s/.test(t.slice(m[1].length, m[1].length + 1)))) return { name: m[1].trim(), std: fmtStd(m[4], m[3] || m[5]) };
+  return { name: t, std: '' };
+}
+function applyStdColumn(items, std) {
+  if (!std) return;
+  const v = std.replace(/\n/g, ' ');
+  const each = /각\s*([\d.]+)/.exec(v);
+  if (each) { items.forEach(i => { if (!i.std) i.std = each[1]; }); return; }
+  let hit = false;
+  for (const i of items) {
+    for (const key of new Set([i.raw, i.name])) {
+      const m = new RegExp(esc(key) + '\\s*[:：]?\\s*([\\d.]+)', 'i').exec(v);
+      if (m) { if (!i.std) i.std = m[1]; hit = true; break; }
+    }
+  }
+  if (hit) return;
+  const nums = v.match(/\d+(?:\.\d+)?/g) || [];
+  if (nums.length === items.length) items.forEach((i, k) => { if (!i.std) i.std = nums[k]; });
+}
+
+/* ───────── 10. 본문 채취일 ───────── */
+function bodyParagraphs(body) {
+  const out = [];
+  for (const x of kids(body)) {
+    if (x.n === 'p' || x.n === 'h') { const t = inlineText(x).replace(/\s+/g, ' ').trim(); if (t) out.push(t); }
+    else if (x.n === 'list' || x.n === 'list-item' || x.n === 'section') out.push(...bodyParagraphs(x));
+  }
+  return out;
+}
+function dateFromBody(paras) {
+  const found = [];
+  for (const p of paras) for (const d of allDates(p)) {
+    const before = p.slice(Math.max(0, d.index - 25), d.index), after = p.slice(d.end, d.end + 45);
+    if (/의뢰\s*(일|일자)/.test(before)) continue;
+    if (/(채수|채취|채집)/.test(after) || /(채수|채취)[^.。]{0,15}$/.test(before)) found.push(d);
+  }
+  return found;
+}
+
+/* ───────── 11. 제목 대조 ───────── */
+function titleCheck(title, samples, baseTotal) {
+  const m = /[(\[]([^()\[\]]*\d[^()\[\]]*)[)\]]\s*$/.exec(title || '');
+  if (!m || !samples.length) return '';
+  const code = m[1];
+  let exp = null;
+  const n = /등\s*(\d+)\s*건/.exec(code);
+  if (n) exp = +n[1];
+  else {
+    const r = /(\d+)\s*~\s*(?:[0-9A-Za-z가-힣\-]*-)?(\d+)/.exec(code);
+    if (r) exp = +r[2] - +r[1] + 1;
+    else {
+      const S = squash(samples[0].rawNo).replace(/\([A-Z]~[A-Z]\)/i, ''), C = squash(code);
+      const x = new RegExp('^' + esc(S) + '-(\\d+)$').exec(C);
+      if (x) exp = +x[1] - +(/(\d+)$/.exec(S) || [0, 0])[1] + 1;
+      else if (C.replace(/-/g, '').includes(S.replace(/-/g, ''))) exp = 1;
+      else return `제목 시료번호(${code})와 표 시료번호 다름`;
+    }
+  }
+  return exp != null && exp !== baseTotal ? `제목 시료 수(${exp})와 표(${baseTotal}) 다름` : '';
+}
+
+/* ───────── 12. 메인 ───────── */
+async function extractOdt(bytes, fileName, inflateRaw) {
+  const xml = await unzipEntry(bytes, 'content.xml', inflateRaw);
+  const root = parseXML(xml);
+  const officeBody = findAll(root, 'body')[0];
+  const body = (officeBody && kids(officeBody, 'text')[0]) || root;
+  const tables = findAll(body, 'table').filter(t => !findAll(t, 'table').length); // 중첩 없는 표만
+  const hdr = parseHeader(tables) || { org: '', title: '' };
+  const ftr = parseFooter(tables) || {};
+  if (!ftr.sender && ftr.drafterPos) ftr.sender = senderFallback(body, ftr.drafterPos);
+  const org = deriveOrg(hdr.org, ftr.addr);
+  const paras = bodyParagraphs(body);
+  const docWarn = [];
+  const doc = {
+    파일명: (fileName || '').normalize('NFC'), 제목: hdr.title, 상단기관명: hdr.org,
+    의뢰기관: org.의뢰기관, 의뢰자: org.의뢰자, 발신명의: ftr.sender || '',
+    시행: ftr.siNo || '', 시행일: (parseDate(ftr.siDate) || {}).date || '',
+    접수: ftr.rcNo || '', 접수일: (parseDate(ftr.rcDate) || {}).date || '',
+    시료채취자: ftr.drafter || '', 기안자직위: ftr.drafterPos || '',
+    우편번호: ftr.zip || '', 주소: ftr.addr || '', 전화번호: ftr.tel || '', 이메일: ftr.email || '',
+  };
+  if (!doc.접수) docWarn.push('접수번호 없음');
+  if (!doc.의뢰자) docWarn.push('의뢰자 판정 불가');
+  const sts = findSampleTables(tables);
+  if (!sts.length) docWarn.push('시료표 미인식');
+  const bodyDates = dateFromBody(paras);
+  const bodyDate = bodyDates[0] || null;
+  const bset = [...new Set(bodyDates.map(d => d.date))];
+  if (bset.length > 1) docWarn.push('본문 채취일 여러 개: ' + bset.join(', '));
+  const rows = [], allSamples = [], tableInfo = []; let baseTotal = 0;
+  for (const st of sts) {
+    const { headers, raw, samples } = readSampleTable(st);
+    tableInfo.push({ headers, raw });
+    for (const s of samples) {
+      const ex = expandNo(s.rawNo); baseTotal += ex.baseCount; allSamples.push(s);
+      const warn = [];
+      const groups = s.groups.map(gp => {
+        const p = parseItems(gp.items);
+        let std = gp.std, region = gp.region;
+        if (std && !/\d/.test(std)) { region = region || std; std = ''; } // '수질기준' 열에 지역코드가 들어간 경우
+        applyStdColumn(p.items, std);
+        const rg = (region || p.region || '').replace(/\s*\n\s*/g, ' ').trim();
+        p.items.forEach(i => { i.region = rg; });
+        return { items: p.items, region: rg };
+      });
+      const items = [];
+      groups.forEach(gp => gp.items.forEach(i => { if (!items.some(x => x.name === i.name)) items.push(i); }));
+      if (/기준/.test(s.note)) applyStdColumn(items, s.note);
+      const unknown = items.filter(i => !i.known).map(i => i.raw);
+      if (unknown.length) warn.push('미등록 항목: ' + unknown.join(', '));
+      if (!items.length) warn.push('검사항목 없음');
+      const regs = groups.map(gp => gp.region).filter(Boolean);
+      const regionText = new Set(regs).size > 1
+        ? groups.filter(gp => gp.region).map(gp => `${gp.region}(${gp.items.map(i => i.name).join(', ')})`).join(' / ')
+        : (regs[0] || '');
+      let date, time = '', src;
+      const pd = parseDate(s.date);
+      if (pd) { date = pd.date; time = pd.time; src = '표'; }
+      else if (bodyDate) { date = bodyDate.date; time = bodyDate.time; src = '본문'; }
+      else { date = '채취일자 확인 필요'; src = '확인필요'; warn.push('채취일자 확인 필요'); }
+      if (pd && doc.접수일 && pd.date > doc.접수일) warn.push('채취일이 접수일보다 늦음');
+      for (const no of ex.list) {
+        const row = {
+          ...doc, 시료번호: no, 시료번호원문: s.rawNo,
+          검사항목: items.map(i => i.name).join(', '),
+          기준: '', 기준출처: '',
+          지역구분: regionText, 시료채취일: date, 채취시각: time, 채취일출처: src,
+          '업종/성상': spacedName(s.industry.replace(/\n/g, ' ')), 시료량: s.qty.replace(/\n/g, ', '),
+          채취지점: s.point.replace(/\n/g, ' '), 비고: s.note.replace(/\n/g, ' '), 기타: s.other,
+          _items: items.map(i => ({ name: i.name, region: i.region || regionText, stdDoc: i.std || '', std: i.std || '', src: i.std ? '공문' : '' })),
+          _warn: warn,
+        };
+        refreshStdText(row);
+        rows.push(row);
+      }
+    }
+  }
+  const tc = titleCheck(hdr.title, allSamples, baseTotal); if (tc) docWarn.push(tc);
+  if (doc.시행일 && doc.접수일 && doc.접수일 < doc.시행일) docWarn.push('접수일이 시행일보다 빠름');
+  if (!rows.length) rows.push({ ...doc, 시료번호: '', _items: [], _warn: [] });
+  rows.forEach(r => { r._baseWarn = [...docWarn, ...r._warn]; delete r._warn; r.확인필요 = r._baseWarn.join(' / '); });
+  return { doc: { ...doc, 본문: paras }, rows, warnings: docWarn, tables: tableInfo };
+}
+
+// v1.1: 엑셀·화면 기본 순서 — 접수일, 의뢰기관, 의뢰자, 발신명의, 시행, 시료번호, 검사항목, 시료채취일 먼저
+const COLUMNS = ['접수일','의뢰기관','의뢰자','발신명의','시행','시료번호','검사항목','시료채취일','기준','기준출처','지역구분',
+  '채취시각','채취일출처','시료채취자','접수','시행일','제목','업종/성상','시료량','채취지점','비고','기타','우편번호','주소','전화번호','이메일','확인필요','파일명'];
+
+/* ───────── 13. 중복 공문 ───────── */
+function markDuplicates(results) {
+  const by = {};
+  results.forEach(r => { r.duplicate = false; r.dupWarn = ''; if (r.doc && r.doc.접수) (by[r.doc.접수] = by[r.doc.접수] || []).push(r); });
+  for (const k in by) if (by[k].length > 1) by[k].forEach((r, i) => {
+    const others = by[k].filter(x => x !== r).map(x => x.doc.파일명).join(', ');
+    r.duplicate = i > 0;
+    r.dupWarn = (i > 0 ? '중복 공문(집계 제외)' : '중복 공문 있음') + ': ' + others;
+  });
+  results.forEach(r => r.rows.forEach(x => { x.확인필요 = [...(x._baseWarn || []), ...(r.dupWarn ? [r.dupWarn] : [])].join(' / '); }));
+  return results;
+}
+
+/* ───────── 14. 기준표 (지역구분 × 항목 → 기준값) ───────── */
+function refreshStdText(row) {
+  const its = row._items || [];
+  const withStd = its.filter(i => i.std);
+  row.기준 = withStd.map(i => `${i.name} ${i.std}`).join(', ');
+  const srcs = new Set(withStd.map(i => i.src));
+  row.기준출처 = !withStd.length ? '' : (srcs.size > 1 ? '공문+기준표' : [...srcs][0]) + (withStd.length < its.length ? '(일부)' : '');
+}
+const normRegionTok = t => squash(t).replace(/지역$/, '');
+function regionTokens(region) { return String(region || '').split(/[,\/()（）·]+/).map(normRegionTok).filter(Boolean); }
+// rows2d: 첫 행 머리글(지역구분·항목·기준값·단위)
+function parseStdTable(rows2d) {
+  if (!rows2d || !rows2d.length) return [];
+  let hr = rows2d.findIndex(r => r.some(c => squash(c) === '항목'));
+  if (hr < 0) return [];
+  const H = rows2d[hr].map(squash);
+  const ci = k => H.findIndex(h => h.includes(k));
+  const iR = ci('지역'), iI = H.findIndex(h => h === '항목' || h.includes('항목')), iV = ci('기준'), iU = ci('단위');
+  const out = [];
+  for (const r of rows2d.slice(hr + 1)) {
+    const item = (r[iI] || '').trim(), val = (r[iV] || '').toString().trim();
+    if (!item || !val) continue;
+    const region = iR >= 0 ? (r[iR] || '').trim() : '';
+    out.push({ region, key: normRegionTok(region), item: normItem(item) || item, value: val, unit: iU >= 0 ? (r[iU] || '').trim() : '' });
+  }
+  return out;
+}
+function lookupStd(table, itemName, region) {
+  const toks = regionTokens(region), whole = squash(region).replace(/지역/g, '');
+  let best = null, bestScore = -1;
+  for (const e of table) {
+    if (e.item !== itemName) continue;
+    let score = -1;
+    if (!e.key || e.key === '*' || e.key === '전체') score = 0;
+    else if (toks.includes(e.key)) score = 10 + e.key.length;
+    else if (e.key.length > 2 && whole.includes(e.key.replace(/지역/g, ''))) score = 5 + e.key.length;
+    if (score > bestScore) { best = e; bestScore = score; }
+  }
+  return best;
+}
+function applyStdTable(results, table) {
+  let filled = 0;
+  for (const r of results) for (const row of r.rows) {
+    for (const it of row._items || []) {
+      it.std = it.stdDoc; it.src = it.stdDoc ? '공문' : '';
+      if (!it.stdDoc && table && table.length) {
+        const e = lookupStd(table, it.name, it.region || row.지역구분);
+        if (e) { it.std = e.value; it.src = '기준표'; filled++; }
+      }
+    }
+    refreshStdText(row);
+  }
+  return filled;
+}
+function missingStdPairs(results) {
+  const map = new Map();
+  for (const r of results) if (!r.duplicate) for (const row of r.rows) for (const it of row._items || []) {
+    if (it.std) continue;
+    const region = it.region || row.지역구분 || '';
+    const k = region + '\u0001' + it.name;
+    if (!map.has(k)) map.set(k, { 지역구분: region, 항목: it.name, 예시: row.시료번호, 건수: 0 });
+    map.get(k).건수++;
+  }
+  return [...map.values()].sort((a, b) => (a.지역구분 + a.항목).localeCompare(b.지역구분 + b.항목, 'ko'));
+}
+
+/* ───────── 15. 기준표 파일 읽기 (xlsx / csv) ───────── */
+async function readXlsxRows(bytes, inflateRaw) {
+  const ss = await unzipEntry(bytes, 'xl/sharedStrings.xml', inflateRaw, true);
+  const shared = ss ? findAll(parseXML(ss), 'si').map(si => findAll(si, 't').map(textAll).join('')) : [];
+  let sheet = await unzipEntry(bytes, 'xl/worksheets/sheet1.xml', inflateRaw, true);
+  if (!sheet) throw new Error('첫 번째 시트를 찾을 수 없음');
+  const rows = [];
+  for (const row of findAll(parseXML(sheet), 'row')) {
+    const arr = [];
+    for (const c of kids(row, 'c')) {
+      const ref = c.a.r || ''; const letters = (/^[A-Z]+/.exec(ref) || ['A'])[0];
+      let ci = 0; for (const ch of letters) ci = ci * 26 + (ch.charCodeAt(0) - 64); ci--;
+      let v = '';
+      const t = c.a.t;
+      if (t === 'inlineStr') v = findAll(c, 't').map(textAll).join('');
+      else { const ve = kids(c, 'v')[0]; v = ve ? textAll(ve) : ''; if (t === 's') v = shared[+v] || ''; }
+      arr[ci < 0 ? arr.length : ci] = v;
+    }
+    rows.push(Array.from(arr, x => x == null ? '' : String(x)));
+  }
+  return rows;
+}
+function decodeText(bytes) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes).replace(/^﻿/, ''); }
+  catch (e) { return new TextDecoder('euc-kr').decode(bytes); } // 엑셀 기본 CSV(한글 Windows)
+}
+function parseCsv(text) {
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+/* ───────── 16. 원본 미리보기 (ODT → HTML, v1.1) ───────── */
+const ODT_PREVIEW_CSS = `
+.odt-page{font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:10pt;line-height:1.3;color:#000;background:#fff;margin:0 auto;padding:1cm 0;box-sizing:content-box}
+.odt-p{margin:0;min-height:1.2em;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
+.odt-table{border-collapse:collapse;table-layout:fixed;margin:0}
+.odt-table td{vertical-align:top;padding:1px 3px;overflow:hidden;overflow-wrap:anywhere}
+.odt-frame{display:inline-block;vertical-align:top;max-width:100%}
+.odt-img{display:inline-block;vertical-align:middle;object-fit:contain}
+.odt-list{margin:0;padding-left:1.2em}`;
+const hesc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function b64(bytes) {
+  if (typeof btoa === 'function') { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+  return Buffer.from(bytes).toString('base64');
+}
+const IMG_MIME = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', bmp: 'image/bmp', svg: 'image/svg+xml', webp: 'image/webp' };
+const CSS_LEN = v => /^-?[\d.]+(cm|mm|in|pt|pc|px|%)$/.test(String(v || '').trim());
+async function renderOdtHtml(bytes, inflateRaw) {
+  const content = parseXML(await unzipEntry(bytes, 'content.xml', inflateRaw));
+  const sx = await unzipEntry(bytes, 'styles.xml', inflateRaw, true);
+  const stylesDoc = sx ? parseXML(sx) : { n: '#root', a: {}, c: [] };
+  const S = {}, D = {};
+  for (const root of [stylesDoc, content]) for (const box of [...findAll(root, 'styles'), ...findAll(root, 'automatic-styles')]) {
+    for (const st of kids(box, 'style')) if (st.a.name) S[(st.a.family || '') + ':' + st.a.name] = st;
+    for (const st of kids(box, 'default-style')) if (st.a.family) D[st.a.family] = st;
+  }
+  const cache = {};
+  function props(family, name) {
+    const key = family + ':' + (name || '');
+    if (cache[key]) return cache[key];
+    const chain = []; let cur = name ? S[family + ':' + name] : null, guard = 0;
+    while (cur && guard++ < 20) { chain.unshift(cur); cur = cur.a['parent-style-name'] ? S[family + ':' + cur.a['parent-style-name']] : null; }
+    if (D[family]) chain.unshift(D[family]);
+    const out = {};
+    for (const st of chain) for (const pe of kids(st)) { const k = pe.n.replace(/-properties$/, ''); out[k] = Object.assign(out[k] || {}, pe.a); }
+    return (cache[key] = out);
+  }
+  const ALIGN = { start: 'left', left: 'left', end: 'right', right: 'right', center: 'center', justify: 'justify' };
+  function textCss(t) {
+    if (!t) return '';
+    const o = [], size = t['font-size-asian'] || t['font-size'], w = t['font-weight-asian'] || t['font-weight'];
+    if (CSS_LEN(size) && !/%$/.test(size)) o.push('font-size:' + size);
+    if (w && (w === 'bold' || +w >= 600)) o.push('font-weight:bold');
+    if ((t['font-style-asian'] || t['font-style']) === 'italic') o.push('font-style:italic');
+    if (t.color && /^#[0-9a-f]{6}$/i.test(t.color)) o.push('color:' + t.color);
+    if (t['text-underline-style'] && t['text-underline-style'] !== 'none') o.push('text-decoration:underline');
+    if (t['background-color'] && t['background-color'] !== 'transparent') o.push('background-color:' + t['background-color']);
+    return o.join(';');
+  }
+  function paraCss(p) {
+    if (!p) return '';
+    const o = [];
+    if (p['text-align']) o.push('text-align:' + (ALIGN[p['text-align']] || 'left'));
+    for (const k of ['margin-left', 'margin-right', 'margin-top', 'margin-bottom', 'text-indent']) if (CSS_LEN(p[k])) o.push(k + ':' + p[k]);
+    const lh = p['line-height'];
+    if (lh && /%$/.test(lh)) o.push('line-height:' + (parseFloat(lh) / 100 * 1.2).toFixed(2));
+    else if (CSS_LEN(lh)) o.push('line-height:' + lh);
+    return o.join(';');
+  }
+  function cellCss(c) {
+    if (!c) return '';
+    const o = [];
+    for (const k of ['border', 'border-top', 'border-bottom', 'border-left', 'border-right']) if (c[k]) o.push(k + ':' + c[k]);
+    for (const k of ['padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right']) if (CSS_LEN(c[k])) o.push(k + ':' + c[k]);
+    if (c['background-color'] && c['background-color'] !== 'transparent') o.push('background-color:' + c['background-color']);
+    if (c['vertical-align']) o.push('vertical-align:' + ({ middle: 'middle', top: 'top', bottom: 'bottom' }[c['vertical-align']] || 'top'));
+    return o.join(';');
+  }
+  const imgs = {};
+  for (const im of findAll(content, 'image')) {
+    const href = im.a.href; if (!href || imgs[href] !== undefined || /^https?:/.test(href)) continue;
+    try { const b = await unzipBytes(bytes, href.replace(/^\.\//, ''), inflateRaw, true); const ext = (href.split('.').pop() || '').toLowerCase(); imgs[href] = b && IMG_MIME[ext] ? `data:${IMG_MIME[ext]};base64,${b64(b)}` : null; }
+    catch (e) { imgs[href] = null; }
+  }
+  function rInline(e) {
+    let out = '';
+    for (const x of e.c) {
+      if (typeof x === 'string') { out += hesc(x.replace(/[\t\r\n ]+/g, ' ')); continue; }
+      switch (x.n) {
+        case 's': out += ' '.repeat(+x.a.c || 1); break;
+        case 'tab': out += '\t'; break;
+        case 'line-break': out += '<br>'; break;
+        case 'frame': out += rFrame(x); break;
+        case 'span': { const css = textCss(props('text', x.a['style-name']).text); out += css ? `<span style="${css}">${rInline(x)}</span>` : rInline(x); break; }
+        case 'note': case 'annotation': case 'bookmark': case 'bookmark-start': case 'bookmark-end': case 'soft-page-break': break;
+        default: out += rInline(x);
+      }
+    }
+    return out;
+  }
+  function rFrame(f) {
+    const w = CSS_LEN(f.a.width) ? f.a.width : '', h = CSS_LEN(f.a.height) ? f.a.height : '';
+    const im = kids(f, 'image')[0], tb = kids(f, 'text-box')[0];
+    if (tb) return `<div class="odt-frame"${w ? ` style="width:${w}"` : ''}>${rBlocks(tb)}</div>`;
+    if (im) { const src = imgs[im.a.href]; return src ? `<img class="odt-img" src="${src}" style="${w ? 'width:' + w + ';' : ''}${h ? 'height:' + h : ''}" alt="">` : ''; }
+    return '';
+  }
+  function rTable(t) {
+    const tp = props('table', t.a['style-name']).table || {};
+    const cols = [];
+    (function colsOf(e) { for (const x of kids(e)) {
+      if (x.n === 'table-column') { const rep = Math.min(+x.a['number-columns-repeated'] || 1, 64); const cw = (props('table-column', x.a['style-name'])['table-column'] || {})['column-width']; for (let k = 0; k < rep; k++) cols.push(CSS_LEN(cw) ? cw : ''); }
+      else if (x.n === 'table-columns' || x.n === 'table-header-columns' || x.n === 'table-column-group') colsOf(x);
+    } })(t);
+    const tw = CSS_LEN(tp.width) ? tp.width : '';
+    let h = `<table class="odt-table"${tw ? ` style="width:${tw}"` : ''}>`;
+    if (cols.length && cols.every(Boolean)) h += '<colgroup>' + cols.map(c => `<col style="width:${c}">`).join('') + '</colgroup>';
+    for (const row of tableRows(t)) {
+      const rp = props('table-row', row.a['style-name'])['table-row'] || {};
+      const rh = rp['row-height'] || rp['min-row-height'];
+      h += `<tr${CSS_LEN(rh) ? ` style="height:${rh}"` : ''}>`;
+      for (const cell of kids(row)) {
+        if (cell.n !== 'table-cell') continue;
+        const rep = Math.min(+cell.a['number-columns-repeated'] || 1, 64);
+        const cs = +cell.a['number-columns-spanned'] || 1, rs = +cell.a['number-rows-spanned'] || 1;
+        const css = cellCss(props('table-cell', cell.a['style-name'])['table-cell']);
+        const inner = rBlocks(cell);
+        for (let k = 0; k < rep; k++) h += `<td${cs > 1 ? ` colspan="${cs}"` : ''}${rs > 1 ? ` rowspan="${rs}"` : ''}${css ? ` style="${css}"` : ''}>${inner}</td>`;
+      }
+      h += '</tr>';
+    }
+    return h + '</table>';
+  }
+  function rBlocks(e) {
+    let out = '';
+    for (const x of kids(e)) {
+      if (x.n === 'p' || x.n === 'h') {
+        const pr = props('paragraph', x.a['style-name']);
+        const css = [paraCss(pr.paragraph), textCss(pr.text)].filter(Boolean).join(';');
+        out += `<div class="odt-p"${css ? ` style="${css}"` : ''}>${rInline(x) || '&#8203;'}</div>`;
+      } else if (x.n === 'table') out += rTable(x);
+      else if (x.n === 'list') out += `<div class="odt-list">${kids(x, 'list-item').map(rBlocks).join('')}</div>`;
+      else if (x.n === 'section' || x.n === 'list-item') out += rBlocks(x);
+      else if (x.n === 'frame') out += rFrame(x);
+    }
+    return out;
+  }
+  let pageW = '17cm';
+  const pl = findAll(stylesDoc, 'page-layout-properties')[0];
+  if (pl && /cm$/.test(pl.a['page-width'] || '')) {
+    const w = parseFloat(pl.a['page-width']) - (parseFloat(pl.a['margin-left']) || 0) - (parseFloat(pl.a['margin-right']) || 0);
+    if (w > 5) pageW = w.toFixed(2) + 'cm';
+  }
+  const base = textCss((props('paragraph', '').text) || {});
+  const officeBody = findAll(content, 'body')[0];
+  const body = (officeBody && kids(officeBody, 'text')[0]) || content;
+  return { html: `<div class="odt-page" style="width:${pageW}${base ? ';' + base : ''}">${rBlocks(body)}</div>`, css: ODT_PREVIEW_CSS, pageWidth: pageW };
+}
+
+const API = { extractOdt, unzipBytes, renderOdtHtml, markDuplicates, parseXML, parseDate, expandNo, parseItems, COLUMNS, ITEM_DICT, ORG_EXCEPTIONS,
+  parseStdTable, applyStdTable, lookupStd, missingStdPairs, readXlsxRows, decodeText, parseCsv, VERSION: '1.1' };
+if (typeof module !== 'undefined' && module.exports) module.exports = API; else global.OdtEngine = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 최소 XLSX 작성기 — 외부 라이브러리 없음. 모든 셀을 텍스트로 저장(시료번호가 날짜로 바뀌는 문제 방지) */
+(function (global) {
+'use strict';
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files) {
+  const enc = new TextEncoder(), parts = [], cent = []; let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    cent.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const csize = cent.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, csize, true); end.setUint32(16, off, true);
+  const all = [...parts, ...cent, new Uint8Array(end.buffer)], out = new Uint8Array(all.reduce((a, b) => a + b.length, 0));
+  let p = 0; for (const a of all) { out.set(a, p); p += a.length; } return out;
+}
+const x = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const col = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+// sheets: [{ name, columns:[{header,width}], rows:[[...]], styleOf?:(rowIndex,colIndex,value,row)=>0|2|3|4 }]
+// 스타일 번호: 0 기본, 1 머리글, 2 노랑(확인필요), 3 회색(중복), 4 연녹색(완료)
+function buildXlsx(sheets) {
+  const files = [];
+  files.push({ name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>' });
+  files.push({ name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' });
+  files.push({ name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((s, i) => `<sheet name="${x(s.name).slice(0, 31)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>' });
+  files.push({ name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` });
+  const fill = rgb => `<fill><patternFill patternType="solid"><fgColor rgb="${rgb}"/></patternFill></fill>`;
+  const xf = (font, fill, extra = '<alignment vertical="center"/>') => `<xf numFmtId="49" fontId="${font}" fillId="${fill}" borderId="1" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1">${extra}</xf>`;
+  files.push({ name: 'xl/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="10"/><name val="맑은 고딕"/><family val="3"/></font><font><b/><sz val="10"/><name val="맑은 고딕"/><family val="3"/></font></fonts>'
+    + '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' + fill('FFDCE6F1') + fill('FFFFF2CC') + fill('FFE7E6E6') + fill('FFE2EFDA') + '</fills>'
+    + '<borders count="2"><border/><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom></border></borders>'
+    + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5">'
+    + xf(0, 0) + xf(1, 2, '<alignment horizontal="center" vertical="center" wrapText="1"/>') + xf(0, 3) + xf(0, 4) + xf(0, 5)
+    + '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' });
+  sheets.forEach((s, i) => {
+    const nc = s.columns.length, nr = s.rows.length + 1;
+    let xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>';
+    s.columns.forEach((c, k) => { xml += `<col min="${k + 1}" max="${k + 1}" width="${c.width || 12}" customWidth="1"/>`; });
+    xml += '</cols><sheetData>';
+    const cell = (r, c, v, st) => `<c r="${col(c)}${r}" t="inlineStr" s="${st}"><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+    xml += '<row r="1" ht="22" customHeight="1">' + s.columns.map((c, k) => cell(1, k, c.header, 1)).join('') + '</row>';
+    s.rows.forEach((row, ri) => {
+      xml += `<row r="${ri + 2}">` + row.map((v, k) => cell(ri + 2, k, v, s.styleOf ? s.styleOf(ri, k, v, row) : 0)).join('') + '</row>';
+    });
+    xml += '</sheetData>' + (s.rows.length ? `<autoFilter ref="A1:${col(nc - 1)}${nr}"/>` : '') + '</worksheet>';
+    files.push({ name: `xl/worksheets/sheet${i + 1}.xml`, data: xml });
+  });
+  return zipStore(files);
+}
+const API = { buildXlsx, zipStore, crc32 };
+if (typeof module !== 'undefined' && module.exports) module.exports = API; else global.MiniXlsx = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 검사의뢰 공문 추출기 — 화면·폴더 관리 */
+(function () {
+'use strict';
+const E = window.OdtEngine, X = window.MiniXlsx;
+const STATUS_FILE = '_처리상태.json';
+const DONE_DIR = '성적처리완료';
+const STD_RE = /^기준표\.(xlsx|csv)$/i;
+const HISTORY_MAX = 1000;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const nowIso = () => new Date().toISOString();
+const shortNo = v => { const m = /-(\d+)$/.exec(v || ''); return m ? m[1] : (v || ''); };
+
+/* ───── 열 정의 (doc: 공문 단위 값 → 시료 여러 행을 하나로 묶어 표시) ───── */
+// v1.1 기본 열 순서: 접수일, 의뢰기관, 의뢰자, 발신명의, 시행, 시료번호, 검사항목, 시료채취일 (나머지는 [열 선택])
+const COLS = [
+  { k: '접수일', doc: 1, def: 1 },
+  { k: '의뢰기관', doc: 1, def: 1 },
+  { k: '의뢰자', doc: 1, def: 1 },
+  { k: '발신명의', doc: 1, def: 1 },
+  { k: '시행', doc: 1, def: 1 },
+  { k: '시료번호', def: 1 },
+  { k: '검사항목', def: 1, wrap: 1 },
+  { k: '시료채취일', def: 1 },
+  { k: '기준', wrap: 1 },
+  { k: '지역구분', wrap: 1 },
+  { k: '시료채취자', doc: 1 },
+  { k: '접수', label: '접수번호', doc: 1, fmt: shortNo },
+  { k: '시행일', doc: 1 }, { k: '제목', doc: 1, wrap: 1 },
+  { k: '기준출처' }, { k: '채취시각' }, { k: '채취일출처' }, { k: '업종/성상', wrap: 1 }, { k: '시료량', wrap: 1 },
+  { k: '채취지점' }, { k: '비고', wrap: 1 }, { k: '기타', wrap: 1 },
+  { k: '우편번호', doc: 1 }, { k: '주소', doc: 1 }, { k: '전화번호', doc: 1 }, { k: '이메일', doc: 1 }, { k: '파일명', doc: 1 },
+];
+const XLSX_W = { 상태: 9, 접수: 30, 접수일: 11, 의뢰기관: 10, 의뢰자: 12, 발신명의: 18, 시행: 22, 시행일: 11, 제목: 40, 시료번호: 18, 검사항목: 34, 기준: 30, 기준출처: 10, 지역구분: 28, 시료채취일: 16, 채취시각: 8, 채취일출처: 9, 시료채취자: 9, '업종/성상': 22, 시료량: 22, 채취지점: 10, 비고: 18, 기타: 24, 우편번호: 8, 주소: 36, 전화번호: 14, 이메일: 22, 확인필요: 40, 파일명: 44 };
+
+function loadCols() {
+  try { const v = JSON.parse(localStorage.getItem('odt-cols-v11') || 'null'); if (Array.isArray(v) && v.length) return v; } catch (e) { /* 저장소 사용 불가 */ }
+  return COLS.filter(c => c.def).map(c => c.k);
+}
+function saveCols() { try { localStorage.setItem('odt-cols-v11', JSON.stringify(state.cols)); } catch (e) { /* 무시 */ } }
+
+function loadPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+function savePref(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 무시 */ } }
+const state = {
+  root: null, savedHandle: null,
+  docs: [], doneDocs: [], doneCount: 0, cache: new Map(),
+  status: { version: 1, checked: {}, history: [] },
+  stdTable: [], stdFile: '', stdFilled: 0,
+  excluded: [], busy: false, lastScan: 0,
+  sort: { key: '접수일', dir: -1 }, // v1.1: 최근 접수 공문이 위로
+  detailMode: loadPref('odt-detail-mode', 'side'), previewCache: new Map(),
+  filter: { q: '', org: '', state: 'pending', warn: false },
+  cols: loadCols(), selected: null,
+};
+
+/* ───── 압축 해제 (브라우저 내장) ───── */
+async function inflateRaw(data) {
+  const ds = new DecompressionStream('deflate-raw');
+  const stream = new Blob([data]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/* ───── 폴더 핸들 저장 (IndexedDB) ───── */
+function idb() {
+  return new Promise((res, rej) => { const r = indexedDB.open('odt-extractor', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function idbGet(k) {
+  try { const db = await idb(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); } catch (e) { return null; }
+}
+async function idbSet(k, v) {
+  try { const db = await idb(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); } catch (e) { /* 무시 */ }
+}
+
+/* ───── 공통 UI ───── */
+let toastTimer;
+function toast(msg, kind) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast' + (kind === 'err' ? ' err' : ''); t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, kind === 'err' ? 7000 : 3500);
+}
+function busy(on, text) { $('#busy').hidden = !on; if (text) $('#busyText').textContent = text; }
+function modal(title, html, okLabel, opts = {}) {
+  return new Promise(resolve => {
+    $('#modalTitle').textContent = title; $('#modalBody').innerHTML = html;
+    const ok = $('#modalOk'), cancel = $('#modalCancel');
+    ok.textContent = okLabel || '확인'; ok.className = 'btn ' + (opts.danger ? 'danger' : 'primary');
+    cancel.hidden = !!opts.infoOnly;
+    $('#modal').hidden = false; ok.focus();
+    const done = v => { $('#modal').hidden = true; ok.onclick = cancel.onclick = null; document.removeEventListener('keydown', onKey); resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') done(false); };
+    ok.onclick = () => done(true); cancel.onclick = () => done(false);
+    document.addEventListener('keydown', onKey);
+  });
+}
+const info = (title, html) => modal(title, html, '닫기', { infoOnly: true });
+
+/* ───── 시작 ───── */
+async function init() {
+  bindUi();
+  if (!('showDirectoryPicker' in window) || typeof DecompressionStream === 'undefined') { showUnsupported(); return; }
+  const h = await idbGet('root');
+  if (h) {
+    state.savedHandle = h;
+    let p = 'prompt'; try { p = await h.queryPermission({ mode: 'readwrite' }); } catch (e) { /* 무시 */ }
+    if (p === 'granted') { await connect(h); return; }
+    showWelcome(h.name);
+  } else showWelcome();
+}
+function showUnsupported() {
+  $('#btnPick').disabled = true;
+  $('#emptyBox').innerHTML = `<div class="notice"><b>이 브라우저에서는 사용할 수 없습니다.</b><br>공문 폴더를 읽고 파일을 옮기려면 <b>Microsoft Edge</b> 또는 <b>Chrome</b>(최신 버전)에서 이 파일을 열어 주세요.</div>`;
+}
+function showWelcome(savedName) {
+  $('#toolbar').hidden = true; $('#bottombar').hidden = true; $('#grid').hidden = true; $('#emptyBox').hidden = false;
+  $('#emptyBox').innerHTML = `
+    <h2>공문 폴더를 연결하세요</h2>
+    <ol>
+      <li><b>공문 폴더 선택</b>을 누르고, 검사의뢰 공문(ODT)을 모아 두는 폴더를 고릅니다.</li>
+      <li>브라우저가 폴더 접근 허용을 물으면 <b>파일 보기 및 편집 허용</b>을 누릅니다. (처리 완료 공문을 옮기기 위해 필요)</li>
+      <li>폴더 안의 공문을 모두 읽어 <b>시료 1개당 1행</b>으로 보여 줍니다.</li>
+    </ol>
+    ${savedName ? `<p>지난번에 쓰던 폴더: <b>${esc(savedName)}</b></p><button class="btn primary" id="btnReconnect">${esc(savedName)} 다시 연결</button>` : ''}
+    <button class="btn ${savedName ? '' : 'primary'}" id="btnPick2">공문 폴더 선택</button>`;
+  const rc = $('#btnReconnect'); if (rc) rc.onclick = reconnect;
+  $('#btnPick2').onclick = pickFolder;
+}
+async function pickFolder() {
+  try {
+    const h = await window.showDirectoryPicker({ id: 'odt-folder', mode: 'readwrite' });
+    await idbSet('root', h); state.savedHandle = h; await connect(h);
+  } catch (e) { if (e.name !== 'AbortError') toast('폴더 선택 실패: ' + e.message, 'err'); }
+}
+async function reconnect() {
+  const h = state.savedHandle; if (!h) return pickFolder();
+  try {
+    const p = await h.requestPermission({ mode: 'readwrite' });
+    if (p === 'granted') await connect(h); else toast('폴더 접근이 허용되지 않았습니다.', 'err');
+  } catch (e) { toast('다시 연결하지 못했습니다. [공문 폴더 선택]으로 다시 골라 주세요. (' + e.message + ')', 'err'); }
+}
+// 시험·자동화용: 폴더 핸들을 직접 넘겨 연결
+window.__odtConnect = h => connect(h);
+
+async function connect(h) {
+  state.root = h; state.cache.clear(); state.selected = null;
+  $('#folderName').textContent = h.name; $('#btnRefresh').disabled = false;
+  await readStatus();
+  await scan();
+}
+
+/* ───── 처리상태 파일 (_처리상태.json) ───── */
+async function readStatus() {
+  state.status = { version: 1, checked: {}, history: [] };
+  try {
+    const fh = await state.root.getFileHandle(STATUS_FILE);
+    const j = JSON.parse(await (await fh.getFile()).text());
+    if (j && typeof j === 'object') state.status = { version: 1, checked: j.checked || {}, history: j.history || [] };
+  } catch (e) { /* 없으면 새로 만듦 */ }
+}
+let saveTimer;
+function saveStatusSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(writeStatus, 250); }
+async function writeStatus() {
+  clearTimeout(saveTimer);
+  try {
+    state.status.updated = nowIso();
+    state.status.history = state.status.history.slice(0, HISTORY_MAX);
+    const fh = await state.root.getFileHandle(STATUS_FILE, { create: true });
+    const w = await fh.createWritable(); await w.write(JSON.stringify(state.status, null, 1)); await w.close();
+  } catch (e) { toast('처리상태 저장 실패: ' + explain(e), 'err'); }
+}
+
+/* ───── 폴더 읽기 ───── */
+async function listFiles(dir) {
+  const odt = [], other = []; let std = null;
+  for await (const [name, h] of dir.entries()) {
+    if (h.kind !== 'file') continue;
+    const nm = name.normalize('NFC');
+    if (nm.startsWith('~$') || nm.startsWith('.')) continue;
+    if (/\.odt$/i.test(nm)) odt.push({ name, nm, handle: h });
+    else if (STD_RE.test(nm)) std = { name, nm, handle: h };
+    else if (nm !== STATUS_FILE) other.push(nm);
+  }
+  odt.sort((a, b) => a.nm.localeCompare(b.nm, 'ko'));
+  return { odt, other, std };
+}
+async function parseEntry(en, loc) {
+  const file = await en.handle.getFile();
+  const ck = `${loc}|${en.nm}|${file.size}|${file.lastModified}`;
+  if (state.cache.has(ck)) return Object.assign(state.cache.get(ck), { handle: en.handle, name: en.name });
+  const d = { id: ck, name: en.name, nm: en.nm, loc, size: file.size };
+  try {
+    if (!file.size) throw new Error('빈 파일 (다운로드 중이거나 손상된 파일)');
+    d.result = await E.extractOdt(new Uint8Array(await file.arrayBuffer()), en.nm, inflateRaw);
+  } catch (e) { d.error = (e && e.message) || String(e); }
+  d.key = d.result && d.result.doc.접수 ? d.result.doc.접수 : 'file:' + en.nm;
+  d.handle = en.handle;
+  state.cache.set(ck, d);
+  return d;
+}
+async function getDoneDir(create) {
+  try { return await state.root.getDirectoryHandle(DONE_DIR, create ? { create: true } : undefined); } catch (e) { return null; }
+}
+async function scan(opts = {}) {
+  if (!state.root || state.busy) return;
+  state.busy = true;
+  try {
+    const { odt, other, std } = await listFiles(state.root);
+    if (!opts.quiet) busy(true, `공문 읽는 중… 0 / ${odt.length}`);
+    const docs = [];
+    for (let i = 0; i < odt.length; i++) {
+      docs.push(await parseEntry(odt[i], 'root'));
+      if (!opts.quiet && (i % 3 === 2 || i === odt.length - 1)) busy(true, `공문 읽는 중… ${i + 1} / ${odt.length}`);
+    }
+    state.docs = docs; state.excluded = other;
+    const doneDir = await getDoneDir(false);
+    if (doneDir) {
+      const dl = await listFiles(doneDir); state.doneCount = dl.odt.length;
+      if (state.filter.state === 'done') {
+        const dd = [];
+        for (let i = 0; i < dl.odt.length; i++) { dd.push(await parseEntry(dl.odt[i], 'done')); if (!opts.quiet && i % 5 === 4) busy(true, `완료 공문 읽는 중… ${i + 1} / ${dl.odt.length}`); }
+        state.doneDocs = dd;
+      } else state.doneDocs = [];
+    } else { state.doneCount = 0; state.doneDocs = []; }
+    await loadStd(std);
+    E.markDuplicates(state.docs.filter(d => d.result).map(d => d.result));
+    E.markDuplicates(state.doneDocs.filter(d => d.result).map(d => d.result));
+    state.stdFilled = E.applyStdTable([...state.docs, ...state.doneDocs].filter(d => d.result).map(d => d.result), state.stdTable);
+    state.lastScan = Date.now();
+    render();
+  } catch (e) {
+    if (e && e.name === 'NotAllowedError') { toast('폴더 접근 권한이 없습니다. 다시 연결해 주세요.', 'err'); showWelcome(state.root.name); }
+    else toast('폴더를 읽지 못했습니다: ' + explain(e), 'err');
+  } finally { state.busy = false; busy(false); }
+}
+async function loadStd(en) {
+  state.stdTable = []; state.stdFile = '';
+  if (!en) return;
+  try {
+    const b = new Uint8Array(await (await en.handle.getFile()).arrayBuffer());
+    const rows = /\.csv$/i.test(en.nm) ? E.parseCsv(E.decodeText(b)) : await E.readXlsxRows(b, inflateRaw);
+    state.stdTable = E.parseStdTable(rows); state.stdFile = en.nm;
+  } catch (e) { toast(`기준표(${en.nm})를 읽지 못했습니다. 엑셀에서 열려 있다면 닫고 [새로고침] 하세요. (${explain(e)})`, 'err'); }
+}
+
+/* ───── 상태 판정 ───── */
+const isChecked = d => d.loc === 'root' && !!state.status.checked[d.key];
+const docRows = d => d.result ? d.result.rows : [{ 파일명: d.nm, 확인필요: '읽기 실패: ' + d.error }];
+function docWarn(d) { return d.error ? true : docRows(d).some(r => r.확인필요); }
+function sortVal(d, key) {
+  const r = docRows(d)[0] || {};
+  const rno = () => { const n = shortNo(r.접수); return /^\d+$/.test(n) ? n.padStart(10, '0') : ''; };
+  if (key === '접수') return rno() || (state.sort.dir > 0 ? '~' : '') + (r.접수 || d.nm);
+  if (key === '접수일') return (r.접수일 || (state.sort.dir > 0 ? '9999' : '0000')) + '|' + rno();
+  return String(r[key] == null ? '' : r[key]);
+}
+function visibleDocs() {
+  const f = state.filter;
+  const src = f.state === 'done' ? state.doneDocs : state.docs;
+  const q = f.q.trim().toLowerCase();
+  const list = src.filter(d => {
+    if (f.state === 'checked' && !isChecked(d)) return false;
+    if (f.state === 'unchecked' && isChecked(d)) return false;
+    const rows = docRows(d);
+    if (f.org && (rows[0].의뢰기관 || '') !== f.org) return false;
+    if (f.warn && !docWarn(d)) return false;
+    if (q && !d.nm.toLowerCase().includes(q) && !rows.some(r => E.COLUMNS.some(c => String(r[c] || '').toLowerCase().includes(q)))) return false;
+    return true;
+  });
+  const { key, dir } = state.sort;
+  list.sort((a, b) => { const va = sortVal(a, key), vb = sortVal(b, key); return (va < vb ? -1 : va > vb ? 1 : 0) * dir || a.nm.localeCompare(b.nm, 'ko'); });
+  return list;
+}
+function checkedGroups() {
+  const by = new Map();
+  for (const d of state.docs) if (isChecked(d)) { if (!by.has(d.key)) by.set(d.key, []); by.get(d.key).push(d); }
+  return [...by.entries()].map(([key, docs]) => ({ key, docs }));
+}
+
+/* ───── 그리기 ───── */
+function activeCols() { return COLS.filter(c => state.cols.includes(c.k)); }
+function render() {
+  $('#toolbar').hidden = false; $('#bottombar').hidden = false;
+  renderOrgOptions();
+  $('#fState').options[3].textContent = `성적처리완료 폴더 (${state.doneCount})`;
+  const cols = activeCols(), list = visibleDocs(), isDone = state.filter.state === 'done';
+  const grid = $('#grid'), empty = $('#emptyBox');
+  if (!list.length) {
+    grid.hidden = true; empty.hidden = false;
+    const none = (isDone ? state.doneDocs : state.docs).length === 0;
+    empty.innerHTML = none
+      ? (isDone ? '<h2>성적처리완료 폴더가 비어 있습니다</h2>' : `<h2>공문 폴더에 ODT 파일이 없습니다</h2><p>검사의뢰 공문(ODT)을 <b>${esc(state.root.name)}</b> 폴더에 저장한 뒤 <b>새로고침</b>을 누르세요. 이 창으로 돌아오면 자동으로 다시 읽습니다.</p>`)
+      : '<h2>조건에 맞는 공문이 없습니다</h2><p>검색어나 필터를 바꿔 보세요.</p>';
+  } else {
+    empty.hidden = true; grid.hidden = false;
+    const s = state.sort;
+    let th = `<tr><th class="c-chk">${isDone ? '되돌리기' : `<input type="checkbox" id="chkAll" title="보이는 공문 모두 완료 체크">`}</th>`;
+    for (const c of cols) th += `<th data-k="${esc(c.k)}" class="${s.key === c.k ? 'sorted' : ''}" data-dir="${s.dir > 0 ? '▲' : '▼'}">${esc(c.label || c.k)}</th>`;
+    th += `<th data-k="확인필요" class="${s.key === '확인필요' ? 'sorted' : ''}" data-dir="${s.dir > 0 ? '▲' : '▼'}">확인필요</th></tr>`;
+    grid.tHead.innerHTML = th;
+    const parts = [];
+    for (const d of list) {
+      const rows = docRows(d), n = rows.length, chk = isChecked(d);
+      const dup = d.result && d.result.duplicate;
+      const cls = [chk && 'is-checked', isDone && 'is-done', dup && 'is-dup', d.error && 'is-err', state.selected === d.id && 'is-sel'].filter(Boolean).join(' ');
+      rows.forEach((r, i) => {
+        let tr = `<tr data-id="${esc(d.id)}" class="${cls}${i === 0 ? ' grp-first' : ''}">`;
+        if (i === 0) tr += `<td class="c-chk" rowspan="${n}">${isDone ? `<button class="btn small" data-act="restore" title="공문 폴더로 되돌리기">되돌리기</button>` : `<input type="checkbox" data-act="check" ${chk ? 'checked' : ''} title="이 공문 완료 체크">`}</td>`;
+        if (d.error) { tr += `<td class="c-warn err wrap" colspan="${cols.length + 1}">⚠ 읽기 실패 — <b>${esc(d.nm)}</b> : ${esc(d.error)}</td></tr>`; parts.push(tr); return; }
+        for (const c of cols) {
+          if (c.doc && i > 0) continue;
+          let v = r[c.k] == null ? '' : r[c.k];
+          const span = c.doc && n > 1 ? ` rowspan="${n}"` : '';
+          let extra = c.wrap ? 'wrap' : '';
+          let html = esc(c.fmt ? c.fmt(v) : v);
+          if (c.k === '시료채취일' && v === '채취일자 확인 필요') extra += ' cell-warn';
+          if (c.k === '시료채취일' && r.채취일출처 === '본문') html += '<span class="badge" title="공문 본문 문장에서 찾은 날짜">본문</span>';
+          if (c.k === '기준' && /기준표/.test(r.기준출처 || '')) html += '<span class="badge ok" title="기준표에서 찾은 값 포함">기준표</span>';
+          tr += `<td class="${extra}"${span} title="${esc(v)}">${html}</td>`;
+        }
+        const w = r.확인필요 || '';
+        tr += `<td class="c-warn${d.error ? ' err' : ''}" title="${esc(w)}">${w ? '⚠ ' + esc(w) : ''}</td></tr>`;
+        parts.push(tr);
+      });
+    }
+    grid.tBodies[0].innerHTML = parts.join('');
+    const all = $('#chkAll');
+    if (all) { const vis = list.filter(d => d.loc === 'root'); all.checked = vis.length > 0 && vis.every(isChecked); all.indeterminate = !all.checked && vis.some(isChecked); }
+  }
+  renderStats(list);
+  renderDetail();
+}
+function renderOrgOptions() {
+  const sel = $('#fOrg'), cur = state.filter.org;
+  const orgs = [...new Set([...state.docs, ...state.doneDocs].map(d => (docRows(d)[0] || {}).의뢰기관).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko'));
+  sel.innerHTML = '<option value="">기관 전체</option>' + orgs.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
+}
+function renderStats(list) {
+  const docs = state.docs, live = docs.filter(d => !(d.result && d.result.duplicate));
+  const samples = live.reduce((a, d) => a + (d.result ? d.result.rows.filter(r => r.시료번호).length : 0), 0);
+  const warn = docs.filter(docWarn).length, err = docs.filter(d => d.error).length, dup = docs.length - live.length;
+  const groups = checkedGroups();
+  $('#btnDone').textContent = `완료 체크한 공문 처리 완료 (${groups.length})`;
+  $('#btnDone').disabled = !groups.length || state.filter.state === 'done';
+  const bits = [`공문 <b>${live.length}</b>건`, `시료 <b>${samples}</b>개`, `확인필요 <b>${warn}</b>`, `완료체크 <b>${groups.length}</b>`];
+  if (dup) bits.push(`중복 ${dup}`); if (err) bits.push(`읽기실패 ${err}`);
+  if (state.excluded.length) bits.push(`<span title="${esc(state.excluded.join('\n'))}">ODT 아님 ${state.excluded.length}</span>`);
+  bits.push(state.stdFile ? `<span title="기준표에서 채운 항목 수">기준표 ${state.stdTable.length}행 · ${state.stdFilled}항목 적용</span>` : '기준표 없음');
+  if (list.length !== (state.filter.state === 'done' ? state.doneDocs : docs).length) bits.push(`표시 ${list.length}건`);
+  $('#stats').innerHTML = bits.join(' · ');
+}
+function highlightDates(p) {
+  return esc(p).replace(/((?:\d{4}|&#39;\d{2}|'\d{2})\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{1,2}\.?(?:\s*\([월화수목금토일]\))?)/g, '<mark>$1</mark>');
+}
+function extractedHtml(d) {
+  const res = d.result;
+  let h = '';
+  if (d.error) h += `<ul class="warnlist"><li>읽기 실패: ${esc(d.error)}</li></ul>`;
+  if (!res) return h;
+  const warns = [...new Set(res.rows.map(r => r.확인필요).filter(Boolean).join(' / ').split(' / ').filter(Boolean))];
+  if (warns.length) h += `<ul class="warnlist">${warns.map(w => `<li>${esc(w)}</li>`).join('')}</ul>`;
+  const dd = res.doc;
+  h += `<dl>
+    <dt>파일</dt><dd>${esc(d.nm)}${d.loc === 'done' ? ' <span class="badge">처리완료</span>' : ''}</dd>
+    <dt>의뢰기관</dt><dd>${esc(dd.의뢰기관)} / ${esc(dd.의뢰자)}</dd>
+    <dt>발신명의</dt><dd>${esc(dd.발신명의)}</dd>
+    <dt>시행</dt><dd>${esc(dd.시행)} (${esc(dd.시행일)})</dd>
+    <dt>접수</dt><dd>${esc(dd.접수)} (${esc(dd.접수일)})</dd>
+    <dt>시료채취자</dt><dd>${esc(dd.시료채취자)} ${dd.기안자직위 ? '(' + esc(dd.기안자직위) + ')' : ''}</dd>
+    <dt>주소</dt><dd>${esc(dd.우편번호)} ${esc(dd.주소)}</dd>
+    <dt>연락처</dt><dd>${esc(dd.전화번호)} ${esc(dd.이메일)}</dd>
+  </dl>`;
+  const rs = res.rows.filter(r => r.시료번호);
+  h += `<h4>추출된 시료 (${rs.length})</h4><table class="mini"><tr><th>시료번호</th><th>검사항목</th><th>기준</th><th>지역</th><th>채취일</th></tr>`
+    + rs.map(r => `<tr><td>${esc(r.시료번호)}</td><td>${esc(r.검사항목)}</td><td>${esc(r.기준)}</td><td>${esc(r.지역구분)}</td><td>${esc(r.시료채취일)}${r.채취일출처 === '본문' ? ' (본문)' : ''}</td></tr>`).join('') + '</table>';
+  for (const t of res.tables || []) {
+    h += `<h4>공문 시료 표 원문</h4><table class="mini">` + (t.raw || [t.headers]).map((row, i) => `<tr>${row.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${esc(c)}</td>`).join('')}</tr>`).join('') + '</table>';
+  }
+  if (dd.본문 && dd.본문.length) h += `<h4>본문</h4><div class="paras">${dd.본문.map(p => `<p>${highlightDates(p)}</p>`).join('')}</div>`;
+  return h;
+}
+// v1.1: 상세 패널 — [추출 결과] [원본 보기] [나란히] 전환, 원본(ODT)을 서식 그대로 표시
+function renderDetail() {
+  const box = $('#detail');
+  const d = [...state.docs, ...state.doneDocs].find(x => x.id === state.selected);
+  if (!d) { box.hidden = true; box.className = 'detail'; box.dataset.id = ''; return; }
+  const same = box.dataset.id === d.id;
+  const keep = { a: (box.querySelector('.pane-ext') || {}).scrollTop || 0, b: (box.querySelector('.pane-org') || {}).scrollTop || 0 };
+  const mode = state.detailMode;
+  box.hidden = false; box.className = 'detail mode-' + mode;
+  const r0 = docRows(d)[0] || {};
+  const seg = [['ext', '추출 결과'], ['org', '원본 보기'], ['side', '나란히']].map(([k, l]) => `<button class="seg-btn${mode === k ? ' on' : ''}" data-act="mode-${k}">${l}</button>`).join('');
+  let h = `<div class="detail-head"><h3 title="${esc(d.nm)}">${esc(r0.제목 || d.nm)}</h3><div class="seg">${seg}</div><button class="btn small" data-act="close">닫기</button></div>`;
+  h += '<div class="detail-body">';
+  if (mode !== 'org') h += `<div class="pane pane-ext">${extractedHtml(d)}</div>`;
+  if (mode !== 'ext') h += `<div class="pane pane-org"><div class="pv-tools"><span class="muted">원본 공문 (${esc(d.nm)})</span><span class="spacer"></span><button class="btn small" data-act="pv-big">새 창으로 크게 보기</button><button class="btn small" data-act="pv-download" title="원본 ODT 파일을 내려받아 한글 등에서 엽니다">원본 파일 열기</button></div><div class="pv" id="pv"><div class="muted pv-msg">원본 불러오는 중…</div></div></div>`;
+  h += '</div><div class="detail-foot">';
+  if (d.loc === 'done') h += `<button class="btn" data-act="restore">공문 폴더로 되돌리기</button>`;
+  else h += `<button class="btn ${isChecked(d) ? '' : 'primary'}" data-act="check-toggle">${isChecked(d) ? '완료 체크 해제' : '완료 체크'}</button>`;
+  h += '</div>';
+  box.innerHTML = h;
+  box.dataset.id = d.id;
+  if (same) { const a = box.querySelector('.pane-ext'), b = box.querySelector('.pane-org'); if (a) a.scrollTop = keep.a; if (b) b.scrollTop = keep.b; }
+  if (mode !== 'ext') showPreview(d, same ? keep.b : 0);
+}
+async function getPreview(d) {
+  if (state.previewCache.has(d.id)) return state.previewCache.get(d.id);
+  const file = await d.handle.getFile();
+  const r = await E.renderOdtHtml(new Uint8Array(await file.arrayBuffer()), inflateRaw);
+  if (!document.getElementById('odt-css')) { const st = document.createElement('style'); st.id = 'odt-css'; st.textContent = r.css; document.head.appendChild(st); }
+  if (state.previewCache.size > 30) state.previewCache.delete(state.previewCache.keys().next().value);
+  state.previewCache.set(d.id, r);
+  return r;
+}
+async function showPreview(d, scrollTop) {
+  try {
+    const r = await getPreview(d);
+    const pv = $('#pv');
+    if (!pv || state.selected !== d.id) return;
+    pv.innerHTML = r.html; fitPreview();
+    if (scrollTop) { const b = $('#detail .pane-org'); if (b) b.scrollTop = scrollTop; }
+  } catch (e) {
+    const pv = $('#pv'); if (pv) pv.innerHTML = `<div class="notice">원본을 표시할 수 없습니다: ${esc(explain(e))}</div>`;
+  }
+}
+function fitPreview() {
+  const pv = $('#pv'); if (!pv) return;
+  const page = pv.querySelector('.odt-page'); if (!page) return;
+  page.style.zoom = '';
+  const avail = pv.clientWidth - 24, w = page.offsetWidth;
+  if (w > avail && avail > 100) page.style.zoom = (avail / w).toFixed(3);
+}
+async function openPreviewWindow(d) {
+  try {
+    const r = await getPreview(d);
+    const w = window.open('', '_blank');
+    if (!w) { toast('팝업이 차단되었습니다. 주소창 오른쪽의 팝업 차단 아이콘에서 허용해 주세요.', 'err'); return; }
+    w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(d.nm)}</title><style>body{margin:0;background:#80868f;padding:24px}${r.css}.odt-page{box-shadow:0 2px 12px rgba(0,0,0,.35);padding:1cm 1.5cm}@media print{body{background:#fff;padding:0}.odt-page{box-shadow:none;padding:0}}</style></head><body>${r.html}</body></html>`);
+    w.document.close();
+  } catch (e) { toast('원본을 열지 못했습니다: ' + explain(e), 'err'); }
+}
+async function downloadOriginal(d) {
+  try {
+    const file = await d.handle.getFile();
+    const url = URL.createObjectURL(new Blob([await file.arrayBuffer()], { type: 'application/vnd.oasis.opendocument.text' }));
+    const a = document.createElement('a'); a.href = url; a.download = d.nm; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    toast('원본 파일을 내려받았습니다. 브라우저의 다운로드 목록에서 열면 한글(또는 기본 프로그램)로 열립니다.');
+  } catch (e) { toast('원본 파일을 열지 못했습니다: ' + explain(e), 'err'); }
+}
+
+/* ───── 체크 ───── */
+function setChecked(d, on) {
+  if (!d || d.loc !== 'root') return;
+  if (on) state.status.checked[d.key] = { at: nowIso(), file: d.nm };
+  else delete state.status.checked[d.key];
+  saveStatusSoon();
+}
+function findDoc(id) { return [...state.docs, ...state.doneDocs].find(x => x.id === id); }
+
+/* ───── 파일 이동 ───── */
+function explain(e) {
+  const n = e && e.name;
+  if (n === 'NoModificationAllowedError' || n === 'InvalidModificationError' || n === 'InvalidStateError') return '파일이 다른 프로그램(한글·엑셀 등)에서 열려 있어 처리할 수 없습니다. 파일을 닫고 다시 시도하세요.';
+  if (n === 'NotFoundError') return '파일이 이미 옮겨졌거나 없습니다. [새로고침] 후 다시 확인하세요.';
+  if (n === 'NotAllowedError' || n === 'SecurityError') return '폴더 쓰기 권한이 없습니다. 폴더를 다시 연결해 주세요.';
+  if (n === 'QuotaExceededError') return '저장 공간이 부족합니다.';
+  return (e && e.message) || String(e);
+}
+async function exists(dir, name) { try { await dir.getFileHandle(name); return true; } catch (e) { return false; } }
+async function uniqueName(dir, name) {
+  if (!(await exists(dir, name))) return name;
+  const dot = name.lastIndexOf('.'), base = dot > 0 ? name.slice(0, dot) : name, ext = dot > 0 ? name.slice(dot) : '';
+  for (let k = 2; k < 1000; k++) { const c = `${base} (${k})${ext}`; if (!(await exists(dir, c))) return c; }
+  throw new Error('같은 이름의 파일이 너무 많습니다.');
+}
+// 복사 → 크기 확인 → 원본 삭제 (실패하면 복사본을 지우고 원본 유지)
+async function moveFile(srcDir, name, dstDir) {
+  const fh = await srcDir.getFileHandle(name); // 없으면 NotFoundError
+  const target = await uniqueName(dstDir, name.normalize('NFC'));
+  if (typeof fh.move === 'function') {
+    try { await fh.move(dstDir, target); if (await exists(dstDir, target)) return target; } catch (e) { /* 아래 방식으로 다시 시도 */ }
+    if (await exists(dstDir, target) && !(await exists(srcDir, name))) return target;
+  }
+  const file = await fh.getFile();
+  const nh = await dstDir.getFileHandle(target, { create: true });
+  try {
+    const w = await nh.createWritable(); await w.write(file); await w.close();
+    const copied = await nh.getFile();
+    if (copied.size !== file.size) throw new Error('복사한 파일 크기가 원본과 다릅니다.');
+  } catch (e) { await dstDir.removeEntry(target).catch(() => {}); throw e; }
+  try { await srcDir.removeEntry(name); }
+  catch (e) { await dstDir.removeEntry(target).catch(() => {}); throw e; }
+  return target;
+}
+async function processChecked() {
+  const groups = checkedGroups();
+  if (!groups.length) return toast('완료 체크한 공문이 없습니다.');
+  const files = groups.flatMap(g => g.docs);
+  const ok = await modal('처리 완료', `<p>완료 체크한 공문 <b>${groups.length}건</b>(파일 ${files.length}개)을 <b>${DONE_DIR}</b> 폴더로 옮깁니다.</p><ul class="flist">${files.map(d => `<li>${esc(d.nm)}</li>`).join('')}</ul><p class="muted">옮긴 공문은 [성적처리완료 폴더] 보기에서 언제든 되돌릴 수 있습니다.</p>`, '옮기기');
+  if (!ok) return;
+  busy(true, '공문 옮기는 중…');
+  const okList = [], failList = [];
+  try {
+    const doneDir = await getDoneDir(true);
+    if (!doneDir) throw new Error(`${DONE_DIR} 폴더를 만들 수 없습니다.`);
+    for (const g of groups) {
+      const moved = []; let failed = false;
+      for (const d of g.docs) {
+        try { const to = await moveFile(state.root, d.name, doneDir); moved.push({ from: d.nm, to }); okList.push({ file: d.nm, to }); }
+        catch (e) { failed = true; failList.push({ file: d.nm, msg: explain(e) }); }
+      }
+      if (moved.length) state.status.history.unshift({ at: nowIso(), action: '처리완료', key: g.key, files: moved });
+      if (!failed) delete state.status.checked[g.key];
+    }
+    await writeStatus();
+  } catch (e) { failList.push({ file: '(전체)', msg: explain(e) }); }
+  busy(false);
+  state.selected = null;
+  await scan({ quiet: true });
+  let html = `<p class="res-ok">옮긴 파일 <b>${okList.length}</b>개</p>`;
+  if (okList.some(x => x.to !== x.file.normalize('NFC'))) html += `<p class="muted">같은 이름이 이미 있어 이름 뒤에 번호를 붙인 파일이 있습니다.</p>`;
+  if (failList.length) html += `<h4 class="res-err">옮기지 못한 파일 ${failList.length}개</h4><ul class="flist">${failList.map(f => `<li><b>${esc(f.file)}</b><br>${esc(f.msg)}</li>`).join('')}</ul><p>실패한 공문은 완료 체크가 그대로 남아 있습니다. 원인을 해결한 뒤 다시 [처리 완료]를 누르세요.</p>`;
+  await info('처리 완료 결과', html);
+}
+async function restore(d) {
+  if (!d || d.loc !== 'done') return;
+  const ok = await modal('되돌리기', `<p><b>${esc(d.nm)}</b><br>이 공문을 <b>${esc(state.root.name)}</b> 폴더로 되돌립니다. 완료 체크는 해제됩니다.</p>`, '되돌리기');
+  if (!ok) return;
+  busy(true, '되돌리는 중…');
+  try {
+    const doneDir = await getDoneDir(false);
+    const to = await moveFile(doneDir, d.name, state.root);
+    delete state.status.checked[d.key];
+    state.status.history.unshift({ at: nowIso(), action: '되돌리기', key: d.key, files: [{ from: d.nm, to }] });
+    await writeStatus();
+    toast(`되돌렸습니다: ${to}`);
+  } catch (e) { toast('되돌리지 못했습니다: ' + explain(e), 'err'); }
+  busy(false); state.selected = null;
+  await scan({ quiet: true });
+}
+
+/* ───── 엑셀 저장 ───── */
+async function saveBytes(bytes, name) {
+  const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await window.showSaveFilePicker({ id: 'odt-excel', suggestedName: name, types: [{ description: '엑셀 파일', accept: { [mime]: ['.xlsx'] } }] });
+      const w = await h.createWritable(); await w.write(bytes); await w.close();
+      toast(`저장했습니다: ${h.name}`); return true;
+    } catch (e) {
+      if (e.name === 'AbortError') return false;
+      if (e.name === 'NoModificationAllowedError' || e.name === 'InvalidModificationError') { toast('같은 이름의 엑셀 파일이 열려 있어 저장할 수 없습니다. 엑셀을 닫거나 다른 이름으로 저장하세요.', 'err'); return false; }
+    }
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast(`다운로드 폴더에 저장했습니다: ${name}`); return true;
+}
+async function exportExcel() {
+  const list = visibleDocs();
+  if (!list.length) return toast('저장할 공문이 없습니다.');
+  const header = ['상태', ...E.COLUMNS];
+  const rows = [], meta = [];
+  for (const d of list) {
+    const st = d.loc === 'done' ? '처리완료' : isChecked(d) ? '완료체크' : '처리대기';
+    for (const r of docRows(d)) { rows.push([st, ...E.COLUMNS.map(c => r[c] == null ? '' : r[c])]); meta.push({ dup: !!(d.result && d.result.duplicate), st }); }
+  }
+  const iWarn = header.indexOf('확인필요'), iDate = header.indexOf('시료채취일');
+  const bytes = X.buildXlsx([{
+    name: '공문추출', columns: header.map(h => ({ header: h, width: XLSX_W[h] || 12 })), rows,
+    styleOf: (ri, k, v) => meta[ri].dup ? 3 : ((k === iWarn && v) || (k === iDate && v === '채취일자 확인 필요')) ? 2 : (k === 0 && meta[ri].st !== '처리대기') ? 4 : 0,
+  }]);
+  await saveBytes(bytes, `공문추출_${today()}.xlsx`);
+}
+
+/* ───── 기준표 양식 ───── */
+const unitOf = item => ({ '생태독성': 'TU', '색도': '도', 'pH': '' })[item] != null ? ({ '생태독성': 'TU', '색도': '도', 'pH': '' })[item] : 'mg/L';
+async function makeStdTemplate() {
+  const results = [...state.docs, ...state.doneDocs].filter(d => d.result).map(d => d.result);
+  const miss = E.missingStdPairs(results);
+  const hasStd = !!state.stdFile;
+  if (!miss.length) return toast(hasStd ? '기준이 비어 있는 항목이 없습니다.' : '공문이 없어 양식을 만들 수 없습니다.');
+  const fname = hasStd ? '기준표_추가필요.xlsx' : '기준표.xlsx';
+  const ok = await modal('기준표 양식 만들기', `<p>현재 공문에서 기준이 비어 있는 <b>지역구분 × 항목 ${miss.length}개</b>를 모아 <b>${esc(state.root.name)}\\${fname}</b> 파일을 만듭니다.</p>
+    <ol><li>엑셀로 열어 <b>기준값</b> 칸을 채우고 저장합니다.</li>${hasStd ? `<li>채운 행을 기존 <b>${esc(state.stdFile)}</b>에 옮겨 붙이고 저장합니다.</li>` : ''}<li>엑셀을 닫고 이 화면에서 <b>새로고침</b>을 누르면 기준이 채워집니다.</li></ol>
+    <p class="muted">지역구분을 비우거나 * 로 쓰면 모든 지역에 같은 기준을 적용합니다.</p>`, '만들기');
+  if (!ok) return;
+  const rows = miss.map(m => [m.지역구분, m.항목, '', unitOf(m.항목), `${m.건수}건 (예: ${m.예시})`]);
+  const guide = [
+    ['기준표 작성 방법'], ['1. [기준표] 시트의 기준값 칸을 채우고 저장합니다. (파일 이름은 반드시 기준표.xlsx)'],
+    ['2. 지역구분은 공문에 적힌 값(가, 나, 청정, 특례, 기타, 하수처리구역내 등)을 그대로 씁니다.'],
+    ['3. 지역구분을 비우거나 * 로 쓰면 모든 지역에 적용합니다. 같은 항목에 지역별 기준이 있으면 지역이 맞는 쪽이 우선입니다.'],
+    ['4. 공문에 기준이 적혀 있으면 공문 값을 우선하고, 기준표는 빈 항목만 채웁니다.'],
+    ['5. 항목 이름은 BOD, TOC, SS, T-N, T-P, n-H(광), ABS, 생태독성, 색도 등 프로그램 표준명을 씁니다. (총인·총질소 등도 인식)'],
+  ];
+  const bytes = X.buildXlsx([
+    { name: '기준표', columns: [{ header: '지역구분', width: 30 }, { header: '항목', width: 14 }, { header: '기준값', width: 10 }, { header: '단위', width: 8 }, { header: '참고(해당 시료)', width: 26 }], rows, styleOf: (ri, k) => k === 2 ? 2 : 0 },
+    { name: '작성 안내', columns: [{ header: '안내', width: 110 }], rows: guide },
+  ]);
+  try {
+    const fh = await state.root.getFileHandle(fname, { create: true });
+    const w = await fh.createWritable(); await w.write(bytes); await w.close();
+    await info('기준표 양식', `<p><b>${esc(fname)}</b> 파일을 공문 폴더에 만들었습니다.</p><p>기준값을 채워 저장한 뒤 엑셀을 닫고 <b>새로고침</b>을 누르세요.</p>`);
+  } catch (e) { toast('양식을 만들지 못했습니다: ' + explain(e), 'err'); }
+}
+
+/* ───── 열 선택 ───── */
+function renderColMenu() {
+  const m = $('#colMenu');
+  m.innerHTML = `<div class="cols">${COLS.map(c => `<label><input type="checkbox" value="${esc(c.k)}" ${state.cols.includes(c.k) ? 'checked' : ''}> ${esc(c.label || c.k)}</label>`).join('')}</div>
+    <div class="pop-actions"><button class="btn small" data-act="cols-default">기본값</button><button class="btn small" data-act="cols-all">전체 표시</button></div>`;
+}
+
+/* ───── 도움말 ───── */
+function showHelp() {
+  info('사용 방법', `
+    <h4>1. 공문 모으기</h4><p>검사의뢰 공문(ODT)을 공문 폴더에 저장합니다. 이 창으로 돌아오면 자동으로 다시 읽습니다.</p>
+    <h4>2. 확인하기</h4><p>시료 1개당 1행으로, 최근 접수한 공문이 위에 보입니다. 노란 칸·확인필요 열은 직접 확인이 필요한 값입니다. 행을 누르면 오른쪽에 <b>추출 결과와 원본 공문이 나란히</b> 나옵니다. [추출 결과]·[원본 보기]·[나란히]로 바꿀 수 있고, [새 창으로 크게 보기]·[원본 파일 열기]도 있습니다.</p>
+    <h4>3. 완료 체크 → 처리 완료</h4><p>성적 작성이 끝난 공문의 맨 앞 칸을 체크합니다(공문 단위). 체크는 공문 폴더의 <b>${STATUS_FILE}</b>에 저장되어 프로그램을 껐다 켜도 유지됩니다. <b>[처리 완료]</b>를 누르면 체크한 공문이 <b>${DONE_DIR}</b> 폴더로 옮겨집니다.</p>
+    <h4>4. 되돌리기</h4><p>필터에서 <b>성적처리완료 폴더</b>를 고르면 옮긴 공문이 보이고, [되돌리기]로 다시 공문 폴더로 옮길 수 있습니다.</p>
+    <h4>5. 엑셀 저장</h4><p>현재 화면에 보이는 공문(필터 적용)을 시료 1행 형식으로 저장합니다. 모든 칸은 텍스트로 저장되어 시료번호가 날짜로 바뀌지 않습니다.</p>
+    <h4>6. 기준표</h4><p><b>[기준표 양식 만들기]</b>로 기준이 빈 항목 목록을 만들고, 기준값을 채워 <b>기준표.xlsx</b>로 공문 폴더에 두면 빈 기준이 자동으로 채워집니다.</p>
+    <h4>표시 설명</h4><p><span class="badge">본문</span> 채취일을 공문 본문 문장에서 찾음 · <span class="badge ok">기준표</span> 기준표에서 채운 값 포함 · 회색 행: 접수번호가 같은 중복 공문</p>`);
+}
+
+/* ───── 이벤트 ───── */
+function bindUi() {
+  $('#btnPick').onclick = pickFolder;
+  $('#btnRefresh').onclick = () => scan();
+  $('#btnHelp').onclick = showHelp;
+  $('#btnDone').onclick = processChecked;
+  $('#btnExcel').onclick = exportExcel;
+  $('#btnStd').onclick = makeStdTemplate;
+  let qt;
+  $('#fSearch').oninput = e => { clearTimeout(qt); qt = setTimeout(() => { state.filter.q = e.target.value; render(); }, 150); };
+  $('#fOrg').onchange = e => { state.filter.org = e.target.value; render(); };
+  $('#fState').onchange = async e => { state.filter.state = e.target.value; state.selected = null; if (e.target.value === 'done') await scan(); else render(); };
+  $('#fWarn').onchange = e => { state.filter.warn = e.target.checked; render(); };
+  $('#btnCols').onclick = e => { e.stopPropagation(); const m = $('#colMenu'); if (m.hidden) { renderColMenu(); m.hidden = false; } else m.hidden = true; };
+  $('#colMenu').addEventListener('click', e => e.stopPropagation());
+  $('#colMenu').addEventListener('change', e => {
+    if (e.target.type !== 'checkbox') return;
+    const k = e.target.value;
+    state.cols = e.target.checked ? COLS.map(c => c.k).filter(x => x === k || state.cols.includes(x)) : state.cols.filter(x => x !== k);
+    saveCols(); render();
+  });
+  $('#colMenu').addEventListener('click', e => {
+    const a = e.target.dataset.act;
+    if (a === 'cols-default') state.cols = COLS.filter(c => c.def).map(c => c.k);
+    else if (a === 'cols-all') state.cols = COLS.map(c => c.k);
+    else return;
+    saveCols(); renderColMenu(); render();
+  });
+  document.addEventListener('click', () => { $('#colMenu').hidden = true; });
+
+  const grid = $('#grid');
+  grid.tHead.addEventListener('click', e => {
+    const th = e.target.closest('th[data-k]'); if (!th) return;
+    const k = th.dataset.k;
+    state.sort = state.sort.key === k ? { key: k, dir: -state.sort.dir } : { key: k, dir: k === '접수일' ? -1 : 1 };
+    render();
+  });
+  grid.tHead.addEventListener('change', e => {
+    if (e.target.id !== 'chkAll') return;
+    const on = e.target.checked;
+    for (const d of visibleDocs()) if (d.loc === 'root') setChecked(d, on);
+    render();
+  });
+  grid.tBodies[0].addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    const d = findDoc(tr.dataset.id); if (!d) return;
+    const act = e.target.dataset.act;
+    if (act === 'check') { setChecked(d, e.target.checked); render(); return; }
+    if (act === 'restore') { restore(d); return; }
+    if (e.target.closest('td.c-chk')) return;
+    state.selected = state.selected === d.id ? null : d.id;
+    render();
+  });
+  $('#detail').addEventListener('click', e => {
+    const act = e.target.dataset.act; if (!act) return;
+    const d = findDoc($('#detail').dataset.id);
+    if (act === 'close') { state.selected = null; render(); }
+    else if (act.startsWith('mode-')) { state.detailMode = act.slice(5); savePref('odt-detail-mode', state.detailMode); renderDetail(); }
+    else if (act === 'pv-big' && d) openPreviewWindow(d);
+    else if (act === 'pv-download' && d) downloadOriginal(d);
+    else if (act === 'check-toggle' && d) { setChecked(d, !isChecked(d)); render(); }
+    else if (act === 'restore' && d) restore(d);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal').hidden && state.selected) { state.selected = null; render(); } });
+  // 창으로 돌아오면 폴더를 다시 읽음 (새로 저장한 공문 자동 반영)
+  window.addEventListener('focus', () => { if (state.root && !state.busy && $('#modal').hidden && Date.now() - state.lastScan > 2000) scan({ quiet: true }); });
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(fitPreview, 150); });
+  window.addEventListener('beforeunload', () => { if (saveTimer) writeStatus(); });
+}
+
+init();
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1187 @@
+<title>한탄강 수계 수질 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/*__LEAFLET_CSS__*/
+</style>
+<style>
+/* Layout: 상단(항목·화면) + 좌측 지점 패널 + 우측 작업 영역(요약 → 그래프 → 표). 하천 수질 측정 기록장 같은 차분한 정보 디자인 */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --panel-2:#f6f8f8; --ink:#13201f; --ink-2:#47595a; --ink-3:#7a8a8a;
+  --line:#d9e1e0; --line-2:#e8edec; --accent:#0c666b; --accent-ink:#ffffff; --accent-soft:#dcecea;
+  --warn:#9a6a00; --warn-soft:#fff3d6; --focus:#1b8a8f; --qc-out:#b4235a; --qc-out-soft:#fbe4ee;
+  --above:#d6452f; --below:#2a6bc9; --base:#9aaba9;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --q100:#cde2fb; --q250:#86b6ef; --q400:#3987e5; --q550:#1c5cab; --q700:#0d366b; --mid:#f0efec; --r400:#e34948; --r600:#a42727;
+  --map-fill:#e3ebe9; --map-focus:#d3e2df; --map-stroke:#8fa6a2;
+  --f-ui:"IBM Plex Sans KR","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc; --qc-out:#f07aa8; --qc-out-soft:#3a1a27;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#4a5d59;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc; --qc-out:#f07aa8; --qc-out-soft:#3a1a27;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#4a5d59;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100vh}
+header.top{grid-column:1/-1;position:sticky;top:env(safe-area-inset-top,0px);z-index:1000;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-inline:20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.brand h1 .ver{font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:3px}
+.brand small{color:var(--ink-3);font-size:12px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;cursor:pointer;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg.sm button{padding:3px 10px;font-size:12.5px}
+.tabs{display:flex;gap:2px}
+.tabs button{border:0;background:transparent;padding:8px 11px;cursor:pointer;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:700;line-height:17px;text-align:center}
+.hbtns{display:flex;gap:6px}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink-2);white-space:nowrap}
+.iconbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+aside.side{background:var(--panel);border-right:1px solid var(--line);padding:14px 14px 30px;display:flex;flex-direction:column;gap:16px;
+  position:sticky;top:var(--hdr,64px);height:calc(100vh - var(--hdr,64px));overflow:auto}
+.side h2{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--ink-3)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.search{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 10px}
+.stlist{display:flex;flex-direction:column;gap:2px}
+.basin>.bh{display:flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;color:var(--ink-2);padding:6px 4px 4px;border-top:1px solid var(--line-2);margin-top:6px}
+.river{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);padding:4px 4px 2px 10px}
+.st{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:6px;padding:3px 4px 3px 18px;border-radius:6px}
+.st:hover{background:var(--panel-2)}
+.st label{cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st.hl label{font-weight:600}
+.st .note{font-size:10.5px;color:var(--warn);margin-left:4px}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;margin:0;cursor:pointer}
+.star{border:0;background:transparent;cursor:pointer;color:var(--ink-3);font-size:15px;line-height:1;padding:2px 3px;border-radius:4px}
+.star[aria-pressed="true"]{color:#e0a100}
+.sw{position:relative;width:18px;height:18px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;overflow:hidden;flex:none}
+.sw input{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:30px;height:30px}
+.sw.custom{box-shadow:0 0 0 2px var(--ink-3)}
+.opt{display:flex;flex-direction:column;gap:9px;font-size:13px}
+.opt label{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap}
+.opt select,.opt input[type=number]{border:1px solid var(--line);background:var(--panel-2);border-radius:6px;padding:3px 6px}
+.opt input[type=number]{width:62px}
+.opt .sub{padding-left:2px;color:var(--ink-3);font-size:12px}
+.colors{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px}
+.colors input[type=color]{width:34px;height:22px;border:1px solid var(--line);border-radius:5px;padding:0;background:none;cursor:pointer}
+.hint{font-size:12px;color:var(--ink-3);margin:0}
+
+main{padding:18px 22px 40px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:0}
+.kpi.click{cursor:pointer}
+.kpi.click:hover{border-color:var(--ink-3)}
+.kpi .k{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:21px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.warn{border-color:color-mix(in oklab,var(--warn) 45%,var(--line));background:color-mix(in oklab,var(--warn-soft) 55%,var(--panel))}
+.up{color:var(--above)} .dn{color:var(--below)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card+.card{margin-top:16px}
+.card-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:12px 16px 4px}
+.card-h h3{margin:0;font-size:15px;font-weight:600}
+.card-h .sub{color:var(--ink-3);font-size:12.5px}
+.card-h .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.notice{margin:6px 16px 0;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:12.5px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 16px 0;font-size:12.5px;color:var(--ink-2)}
+.legend .li{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:4px;padding:1px 4px;border:0;background:transparent}
+.legend .li:hover{background:var(--panel-2)}
+.legend .li.off{opacity:.4}
+.legend .ln{width:16px;height:3px;border-radius:2px}
+.legend .muted{color:var(--ink-3);cursor:default}
+.legend .qk{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px}
+.chart{width:100%;height:440px}
+.tablewrap{overflow:auto;max-height:540px;border-top:1px solid var(--line)}
+table.dt{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+.dt th,.dt td{padding:5px 8px;border-bottom:1px solid var(--line-2);white-space:nowrap;text-align:right}
+.dt thead th{position:sticky;top:0;background:var(--panel-2);color:var(--ink-2);font-weight:600;z-index:2;border-bottom:1px solid var(--line)}
+.dt th.l,.dt td.l{text-align:left}
+.dt td.wrap{white-space:normal;min-width:240px}
+.dt td.stc{position:sticky;left:0;background:var(--panel);z-index:1;cursor:pointer;font-weight:500}
+.dt thead th.stc{position:sticky;left:0;z-index:3}
+.dt tr.hl td{background:color-mix(in oklab,var(--accent-soft) 60%,var(--panel))}
+.dt td .g{font-size:10px;margin-left:2px}
+.dt td.q-manual,.dt td.q-repeat{outline:1.5px dashed var(--warn);outline-offset:-3px;background:var(--warn-soft)}
+.dt td.q-outlier{outline:2px dotted var(--qc-out);outline-offset:-3px;background:var(--qc-out-soft)}
+.dt td.q-loq{font-style:italic}
+.dt td.stat{background:var(--panel-2);color:var(--ink)}
+.dt .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dt .btn-s{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px;color:var(--ink-2)}
+.dt .btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.g0,.g1{color:#1d8a4a}.g2{color:#3b8f6a}.g3{color:#8a7a00}.g4{color:#c06a1a}.g5{color:#c2412d}.g6{color:#9b1c1c}
+.ok{color:#1d8a4a}.ng{color:#c2412d}
+.t-manual,.t-repeat{color:var(--warn)} .t-outlier{color:var(--qc-out)} .t-loq,.t-multi,.t-coord{color:var(--ink-2)}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 16px 12px;font-size:12px;color:var(--ink-3)}
+.key{display:inline-block;width:14px;height:10px;vertical-align:middle;margin-right:4px}
+.key.k-rep{outline:1.5px dashed var(--warn);background:var(--warn-soft)}
+.key.k-out{outline:2px dotted var(--qc-out);background:var(--qc-out-soft)}
+
+/* map */
+.mapwrap{position:relative;height:660px;border-top:1px solid var(--line);overflow:hidden;border-radius:0 0 var(--r) var(--r)}
+#map{position:absolute;inset:0;background:var(--panel-2)}
+.leaflet-container{font-family:var(--f-ui);background:var(--panel-2)}
+.vlab{background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:0 5px;font:500 11px/16px var(--f-num);border-radius:4px;white-space:nowrap;display:inline-block;transform:translate(10px,-8px);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.vlab.left{transform:translate(calc(-100% - 10px),-8px)}
+.vlab.over{color:var(--above);font-weight:700}
+.leaflet-tooltip.nm{background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px}
+.netmk{width:12px;height:12px;transform:rotate(45deg);background:var(--panel);border:2px solid var(--ink-2);border-radius:2px}
+.leaflet-control-attribution{font-size:10px}
+.mapctl{position:absolute;left:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.mapctl .seg{background:var(--panel)}
+.mapmsg{background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:8px;padding:6px 10px;font-size:12px;max-width:380px}
+.maplegend{position:absolute;left:12px;bottom:12px;z-index:500;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;min-width:190px}
+.maplegend .bar{height:8px;border-radius:4px;margin:4px 0 2px}
+.maplegend .ends{display:flex;justify-content:space-between;color:var(--ink-3)}
+.maplegend .lg{display:flex;align-items:center;gap:6px;margin-top:4px;color:var(--ink-2)}
+.maplegend .cm{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink-2)}
+.maplegend .cm.est{border-style:dashed}
+.banner{position:absolute;right:12px;top:12px;bottom:12px;width:min(430px,calc(100% - 24px));z-index:600;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden;transition:transform .22s ease,opacity .22s ease}
+.banner.closed{transform:translateX(30px);opacity:0;pointer-events:none}
+.banner .bh{padding:12px 14px 8px;border-bottom:1px solid var(--line-2);display:flex;gap:10px;align-items:flex-start}
+.banner .bh h4{margin:0;font-size:16px}
+.banner .bh p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.banner .x{margin-left:auto}
+.banner .bb{overflow:auto;padding:8px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.banner .mini{height:220px;width:100%;flex:none}
+.itemgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.itemgrid .c{border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;cursor:pointer;background:var(--panel);text-align:left}
+.itemgrid .c:hover{border-color:var(--ink-3)}
+.itemgrid .c.on{border-color:var(--accent);background:var(--accent-soft)}
+.itemgrid .c .k{font-size:11px;color:var(--ink-3)}
+.itemgrid .c .v{font-size:14px;font-weight:600}
+.warnchip{font-size:11.5px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 8px}
+.infochip{font-size:11.5px;color:var(--ink-2);background:var(--panel-2);border-radius:6px;padding:4px 8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:3000;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.menu-toggle{display:none}
+.qcsum{display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 10px}
+.qcsum .chip b{margin-left:4px}
+#print{display:none}
+
+@media (max-width:1180px){ .kpis{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:980px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .tabs{overflow-x:auto;max-width:100%}
+  aside.side{position:static;height:auto;max-height:none;border-right:0;border-bottom:1px solid var(--line);padding-block:10px}
+  aside.side.collapsed .collapsible{display:none}
+  header.top{position:static;padding-inline:16px}
+  .seg.items{flex-wrap:nowrap;overflow-x:auto;max-width:100%;border-radius:12px}
+  .menu-toggle{display:inline-block}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis>.kpi:last-child:nth-child(odd){grid-column:1/-1}
+  main{padding:14px 16px 30px}
+  .chart{height:360px}
+  .mapwrap{height:580px}
+}
+@media (max-width:560px){
+  .banner{top:auto;height:64%;right:8px;left:8px;width:auto}
+  .itemgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;color:#000}
+  .app,.toast{display:none!important}
+  #print{display:block;font-family:var(--f-ui);color:#111}
+  #print h1{font-size:18px;margin:0 0 4px}
+  #print .meta{font-size:11px;color:#555;margin-bottom:10px}
+  #print section{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}
+  #print h2{font-size:14px;margin:8px 0 4px;border-bottom:1px solid #999;padding-bottom:2px}
+  #print img{width:100%;height:auto}
+  #print table{border-collapse:collapse;width:100%;font-size:9.5px}
+  #print th,#print td{border:1px solid #bbb;padding:2px 4px;text-align:right}
+  #print th:first-child,#print td:first-child{text-align:left}
+}
+</style>
+
+<div class="app" id="app">
+  <header class="top" id="hdr">
+    <div class="brand">
+      <h1 id="ttl">한탄강 수계 수질 대시보드<span class="ver" id="ver"></span></h1>
+      <small id="meta"></small>
+    </div>
+    <div class="seg items" id="itemSeg" role="group" aria-label="분석항목"></div>
+    <nav class="tabs" role="tablist" aria-label="화면" id="tabs">
+      <button role="tab" data-view="ts">시계열</button>
+      <button role="tab" data-view="prof">상·하류 종단</button>
+      <button role="tab" data-view="heat">히트맵</button>
+      <button role="tab" data-view="map">지도</button>
+      <button role="tab" data-view="year">연도별 색도</button>
+      <button role="tab" data-view="qc">자료 점검<span class="cnt" id="qcCnt"></span></button>
+    </nav>
+    <div class="hbtns">
+      <button class="iconbtn" id="printBtn" title="선택한 지점·기간으로 7개 항목 보고서를 인쇄하거나 PDF로 저장">인쇄·PDF</button>
+      <button class="iconbtn menu-toggle" id="menuBtn" aria-expanded="false">지점·옵션 ▾</button>
+    </div>
+  </header>
+
+  <aside class="side collapsed" id="side">
+    <section class="collapsible stack">
+      <div class="row" style="justify-content:space-between"><h2>지점</h2><span class="hint" id="selCount"></span></div>
+      <div class="row" id="basinChips"></div>
+      <div class="row">
+        <button class="chip" id="selAll">전체 선택</button>
+        <button class="chip" id="selNone">선택 해제</button>
+        <button class="chip" id="hlNone">강조 해제</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="지점·하천 검색" aria-label="지점 검색">
+      <p class="hint">☆ 강조(색 지정) · ● 눌러서 색상 변경(오른쪽 클릭: 기본색)</p>
+      <div class="stlist" id="stlist"></div>
+    </section>
+    <section class="collapsible opt">
+      <h2>표시</h2>
+      <label>▲▼ 판정
+        <select id="oBand"><option value="sd">평균 ± k·표준편차 밖</option><option value="pct">평균 ± p% 밖</option><option value="all">평균과 다르면 모두</option><option value="off">표시 안 함</option></select></label>
+      <label class="sub" id="oKwrap">k = <input type="number" id="oK" min="0.25" max="4" step="0.25"> <span>(1 = 약 68% 범위)</span></label>
+      <label class="sub" id="oPwrap" hidden>p = <input type="number" id="oP" min="5" max="300" step="5"> %</label>
+      <label>값 라벨 <select id="oLabels"><option value="auto">자동(▲▼·최근값)</option><option value="all">모든 점</option><option value="off">끄기</option></select></label>
+      <label><input type="checkbox" id="oMean"> 평균선과 정상 범위 띠</label>
+      <label><input type="checkbox" id="oLimits"> 기준선(생활환경기준·목표)</label>
+      <label>y축 <select id="oScale"><option value="linear">선형</option><option value="clip">이상치 잘라 보기</option><option value="log">로그</option></select></label>
+      <label><input type="checkbox" id="oGaps"> 측정 안 한 달도 선으로 잇기</label>
+      <label>기간 <select id="oFrom"></select> ~ <select id="oTo"></select></label>
+    </section>
+    <section class="collapsible stack">
+      <h2>색상</h2>
+      <div class="colors">
+        <input type="color" id="cAbove"><span>평균보다 높음 ▲</span>
+        <input type="color" id="cBelow"><span>평균보다 낮음 ▼</span>
+        <input type="color" id="cBase"><span>기본 선(강조 안 한 지점)</span>
+      </div>
+      <div class="row"><button class="chip" id="cReset">색상 초기화</button><button class="chip" id="resetAll">처음 화면으로</button></div>
+      <p class="hint">선택·색상·옵션은 이 브라우저에 저장됩니다. '처음 화면으로'는 저장된 설정을 지우고 DB 설정값으로 돌아갑니다.</p>
+    </section>
+  </aside>
+
+  <main>
+    <div class="kpis" id="kpis"></div>
+
+    <section class="view" id="v-ts">
+      <div class="card">
+        <div class="card-h"><h3 id="tsTitle"></h3><span class="sub" id="tsSub"></span>
+          <div class="tools"><button class="iconbtn" data-img="tsChart">그림 저장</button></div></div>
+        <div class="legend" id="tsLegend"></div>
+        <div class="chart" id="tsChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>데이터</h3><span class="sub" id="tblSub"></span>
+          <div class="tools"><button class="iconbtn" id="tblCopy">표 복사(엑셀 붙여넣기)</button><button class="iconbtn" id="tblCsv">CSV 저장</button></div></div>
+        <div class="tablewrap"><table class="dt" id="tbl"></table></div>
+        <div class="foot" id="tblFoot"></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-prof" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="pfTitle"></h3><span class="sub" id="pfSub"></span>
+          <div class="tools"><div class="seg sm" id="pfRivers"></div><button class="iconbtn" data-img="pfChart">그림 저장</button></div></div>
+        <div class="legend" id="pfLegend"></div>
+        <div class="chart" id="pfChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>구간별 변화</h3><span class="sub">바로 위(상류) 지점과 비교한 기간 평균 변화 · ▲ 30% 이상 증가 구간</span>
+          <div class="tools"><button class="iconbtn" id="pfCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="pfTbl"></table></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-heat" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="hmTitle"></h3><span class="sub" id="hmSub"></span>
+          <div class="tools"><div class="seg sm" id="hmMode"><button data-m="value">측정값</button><button data-m="dev">지점 평균 대비(%)</button></div></div></div>
+        <div class="chart" id="hmChart" style="height:auto"></div>
+        <div class="foot"><span>칸을 누르면 해당 지점을 강조하고 시계열로 이동합니다.</span><span><i class="key k-rep"></i>검토필요·전월 동일</span><span><i class="key k-out"></i>이상값 의심</span></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-map" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="mpTitle"></h3><span class="sub">지점을 누르면 그래프 배너가 열립니다.</span>
+          <div class="tools">
+            <label class="hint" style="display:flex;align-items:center;gap:6px">기준 <select id="mpMonth" class="search" style="width:auto;padding:4px 8px"></select></label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLabels"> 값 표시</label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpNet"> 국가측정망(참고)</label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLines"> 지점 연결선</label>
+          </div></div>
+        <div class="mapwrap">
+          <div id="map"></div>
+          <div class="mapctl"><div class="seg sm" id="mpBase"></div><div class="mapmsg" id="mpMsg" hidden></div></div>
+          <div class="maplegend" id="mpLegend"></div>
+          <div class="banner closed" id="banner" aria-hidden="true">
+            <div class="bh"><div style="min-width:0"><h4 id="bnName"></h4><p id="bnSub"></p></div>
+              <button class="iconbtn x" id="bnClose" aria-label="닫기">✕</button></div>
+            <div class="bb">
+              <div id="bnWarn" class="stack" style="gap:4px"></div>
+              <div class="mini" id="bnChart"></div>
+              <div class="itemgrid" id="bnItems"></div>
+              <div class="btnrow"><button class="btn" id="bnGo">시계열에서 보기</button><button class="btn ghost" id="bnProf">종단에서 보기</button><button class="btn ghost" id="bnHl">강조 추가</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="v-year" hidden>
+      <div class="card">
+        <div class="card-h"><h3>연도별 평균 색도</h3><span class="sub" id="yrSub"></span>
+          <div class="tools"><label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="yrRetired"> 현재 조사하지 않는 지점 포함</label></div></div>
+        <div class="notice" id="yrNote"></div>
+        <div class="legend" id="yrLegend"></div>
+        <div class="chart" id="yrChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>연도별 데이터</h3><span class="sub" id="yrTblSub"></span>
+          <div class="tools"><button class="iconbtn" id="yrCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="yrTbl"></table></div>
+      </div>
+    </section>
+
+    <section class="view" id="v-qc" hidden>
+      <div class="card">
+        <div class="card-h"><h3>자료 점검</h3><span class="sub" id="qcSub"></span>
+          <div class="tools"><label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="qcSel"> 선택한 지점만</label><button class="iconbtn" id="qcCopy">목록 복사</button></div></div>
+        <div class="qcsum" id="qcSum"></div>
+        <div class="tablewrap" style="max-height:none"><table class="dt" id="qcTbl"></table></div>
+        <div class="foot"><span>자동 점검 기준은 DB '설정' 시트에서 바꿀 수 있습니다(이상값_기준·이상값_배율·전월동일_항목수). 확인한 값은 측정결과 시트에서 고친 뒤 대시보드를 다시 만드세요.</span></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="print"></div>
+
+<!--__LIBS__-->
+<script>
+"use strict";
+const D = /*__DATA__*/null;
+
+/* ═════════ 기본값 · 상태 ═════════ */
+const SKEY = "hantan-wq-dashboard-v2";
+const store = { get(){ try{ return JSON.parse(localStorage.getItem(SKEY)||"{}"); }catch(e){ return {}; } },
+                set(v){ try{ localStorage.setItem(SKEY, JSON.stringify(v)); }catch(e){} },
+                clear(){ try{ localStorage.removeItem(SKEY); }catch(e){} } };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+const ST = D.stations, M = D.months, ITEMS = D.items, CFG = D.settings || {};
+const stByName = Object.fromEntries(ST.map(s=>[s.name,s]));
+const itemOf = c => ITEMS.find(i=>i.code===c) || {code:c,name:c,unit:"",dec:2};
+const multiYear = new Set(M.map(m=>m.slice(0,4))).size>1;
+const mLabel = m => multiYear ? m.slice(2,4)+"."+m.slice(5) : (+m.slice(5))+"월";
+const mLong = m => m ? m.slice(0,4)+"년 "+(+m.slice(5))+"월" : "";
+const esc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const RIVERS = [...new Set(ST.map(s=>s.river))].filter(r=>ST.filter(s=>s.river===r).length>1);
+
+function defaults(){
+  return {
+    item: ITEMS.some(i=>i.code===CFG.item) ? CFG.item : (ITEMS.some(i=>i.code==="색도")?"색도":ITEMS[0].code),
+    view: "ts", sel: ST.map(s=>s.name), hl: ST.filter(s=>/목표/.test(s.note)).map(s=>s.name),
+    custom: {}, slots: {}, colors: {},
+    opt: {band: CFG.band||"sd", k: CFG.k||1, p: CFG.p||30, labels:"auto", mean:true, limits:true, scale:"linear", gaps:false},
+    from: 0, to: M.length-1, heatMode: "value", profRiver: RIVERS.includes("신천") ? "신천" : RIVERS[0], profHidden: [],
+    base: CFG.basemap || "자동", mapMonth: "last", mapLabels: true, mapNet: true, mapLines: false, qcFilter: "all", qcSel: false
+  };
+}
+const saved = store.get();
+const S = Object.assign(defaults(), saved, {opt: Object.assign(defaults().opt, saved.opt||{})});
+S.sel = new Set((S.sel||[]).filter(n=>stByName[n])); S.hl = new Set((S.hl||[]).filter(n=>stByName[n]));
+S.profHidden = new Set(S.profHidden||[]);
+if(!(S.from>=0 && S.from<M.length)) S.from = 0;
+if(!(S.to>=S.from && S.to<M.length)) S.to = M.length-1;
+if(!ITEMS.some(i=>i.code===S.item)) S.item = defaults().item;
+if(!RIVERS.includes(S.profRiver)) S.profRiver = defaults().profRiver;
+S.q = ""; S.retired = false;
+const persist = () => store.set({item:S.item, view:S.view, sel:[...S.sel], hl:[...S.hl], custom:S.custom, slots:S.slots, opt:S.opt,
+  colors:S.colors, heatMode:S.heatMode, from:S.from, to:S.to, profRiver:S.profRiver, profHidden:[...S.profHidden],
+  base:S.base, mapLabels:S.mapLabels, mapNet:S.mapNet, mapLines:S.mapLines, qcFilter:S.qcFilter, qcSel:S.qcSel});
+
+const col = k => S.colors[k] || css("--"+k);
+const PAL = () => [1,2,3,4,5,6,7,8].map(i=>css("--s"+i));
+
+/* ═════════ 통계 · 판정 ═════════ */
+const fmt = (v, dec) => { if(v==null||isNaN(v)) return ""; let r = +(+v).toFixed(dec); if(r===0) r = 0; return r.toLocaleString("ko-KR",{minimumFractionDigits:dec,maximumFractionDigits:dec}); };
+function stats(arr){
+  const v = arr.filter(x=>x!=null);
+  if(!v.length) return {n:0};
+  const mean = v.reduce((a,b)=>a+b,0)/v.length;
+  const sd = v.length>1 ? Math.sqrt(v.reduce((a,b)=>a+(b-mean)**2,0)/(v.length-1)) : 0;
+  return {n:v.length, mean, sd, max:Math.max(...v), min:Math.min(...v)};
+}
+const series = (st, item) => (D.values[st]?.[item] || []).slice(S.from, S.to+1);
+const months = () => M.slice(S.from, S.to+1);
+/* 평균 대비 판정: up / dn / in */
+function band(st){
+  if(!st.n || st.n<2) return null;
+  if(S.opt.band==="sd") return [st.mean - S.opt.k*st.sd, st.mean + S.opt.k*st.sd];
+  if(S.opt.band==="pct") return [st.mean*(1-S.opt.p/100), st.mean*(1+S.opt.p/100)];
+  if(S.opt.band==="all") return [st.mean, st.mean];
+  return null;
+}
+function cls(v, st){
+  if(v==null) return "in"; const b = band(st); if(!b) return "in";
+  const e = 1e-9; if(v > b[1]+e) return "up"; if(v < b[0]-e) return "dn"; return "in";
+}
+const bandText = () => S.opt.band==="sd" ? `평균 ± ${S.opt.k}σ` : S.opt.band==="pct" ? `평균 ± ${S.opt.p}%` : S.opt.band==="all" ? "평균" : "";
+function grade(item, mean){
+  const L = D.limits[item]; if(!L || !L.length || mean==null) return null;
+  for(let i=0;i<L.length;i++){ if(L[i].max==null || mean <= L[i].max + 1e-12) return {i, ...L[i]}; }
+  return {i:L.length-1, ...L[L.length-1]};
+}
+const targetOf = item => D.target[item];
+function judge(item, mean){
+  const g = grade(item, mean);
+  if(g) return {html:`<span class="pill g${g.i}">${g.code} ${g.name}</span>`, text:`${g.code} ${g.name}`, i:g.i};
+  const t = targetOf(item);
+  if(t!=null && mean!=null){ const ok = mean <= t; return {html:`<span class="pill ${ok?"ok":"ng"}">${ok?"달성":"미달성"}</span>`, text: ok?"달성":"미달성", ok}; }
+  return {html:"", text:""};
+}
+
+/* ═════════ 자료 점검(QC) 조회 ═════════ */
+const QC_LABEL = {manual:"검토필요", repeat:"전월 동일", outlier:"이상값 의심", loq:"정량한계 미만", multi:"중복 채취", coord:"좌표 추정"};
+const QC_RANK = {outlier:0, manual:1, repeat:2, loq:3, multi:4};
+const qcIndex = {};
+for(const q of D.qc){ if(!q.m) continue; const k = `${q.st}|${q.m}|${q.item||"*"}`; (qcIndex[k] ||= []).push(q); }
+function qcAt(st, m, item){
+  const a = [...(qcIndex[`${st}|${m}|${item}`]||[]), ...(qcIndex[`${st}|${m}|*`]||[])];
+  return a.sort((x,y)=>QC_RANK[x.type]-QC_RANK[y.type]);
+}
+const qcTop = (st,m,item) => qcAt(st,m,item)[0];
+const loqText = (st,m,item) => D.loq[`${st}|${m}|${item}`];
+
+/* ═════════ 색 배정: 색은 지점을 따라간다 ═════════ */
+function selectedOrdered(){ return ST.filter(s=>S.sel.has(s.name)).map(s=>s.name); }
+function colorPlan(names){
+  const many = names.length > 8;
+  const needs = names.filter(n => !many || S.hl.has(n));
+  for(const k of Object.keys(S.slots)) if(!needs.includes(k)) delete S.slots[k];
+  const used = new Set(Object.values(S.slots));
+  for(const n of needs){ if(S.slots[n]==null){ let i=0; while(used.has(i) && i<8) i++; S.slots[n] = i<8 ? i : (Object.keys(S.slots).length % 8); used.add(S.slots[n]); } }
+  const pal = PAL(), base = col("base"), anyHl = names.some(n=>S.hl.has(n));
+  const out = {};
+  for(const n of names){
+    const emph = many ? S.hl.has(n) : (!anyHl || S.hl.has(n));
+    const c = S.custom[n] || (S.slots[n]!=null ? pal[S.slots[n]] : base);
+    out[n] = {color: emph ? c : (many ? base : c), emph, dim: !emph};
+  }
+  return out;
+}
+
+/* ═════════ 공통 추이 차트(시계열·연도별·배너·인쇄) ═════════ */
+function pct(arr, p){ const v = arr.filter(x=>x!=null).sort((a,b)=>a-b); if(!v.length) return null; return v[Math.min(v.length-1, Math.floor(p*(v.length-1)))]; }
+function trendOption({cats, mkeys, rows, item, dec, unit, plan, compact=false, force}){
+  const o = Object.assign({}, S.opt, force||{});
+  const ink = css("--ink"), ink2 = css("--ink-2"), ink3 = css("--ink-3"), line = css("--line"), panel = css("--panel");
+  const above = col("above"), below = col("below"), warn = css("--warn"), qout = css("--qc-out");
+  const names = rows.map(r=>r.name); plan = plan || colorPlan(names);
+  const emphN = names.filter(n=>plan[n].emph).length;
+  const all = rows.flatMap(r=>r.values);
+  // y축: 이상치 자르기
+  let cap = null;
+  if(o.scale==="clip"){ const p = pct(all,.95), mx = Math.max(...all.filter(x=>x!=null)); if(p!=null && mx > p*1.6) cap = +(p*1.25).toPrecision(2); }
+  const log = o.scale==="log";
+  const ser = [];
+  for(const r of rows){
+    const p = plan[r.name], st = stats(r.values);
+    const mk = o.band!=="off" && p.emph;
+    const lastIdx = r.values.reduce((a,v,i)=>v!=null?i:a,-1);
+    const labMode = o.labels==="off" ? "off" : (p.emph && (emphN<=6 || o.labels==="all")) ? o.labels : "off";
+    let isolated = false;
+    const data = r.values.map((v,i)=>{
+      if(v==null || (log && v<=0)) return {value:null};
+      if(!o.gaps && (r.values[i-1]==null) && (r.values[i+1]==null)) isolated = true;
+      const c = cls(v, st), q = mkeys ? qcTop(r.name, mkeys[i], item) : null, lq = mkeys ? loqText(r.name, mkeys[i], item) : null;
+      const clipped = cap!=null && v>cap;
+      const d = {value: clipped?cap:v, _raw:v, _c:c, _q:q, _lq:lq};
+      const qShow = q && (p.emph || q.type==="outlier");
+      if(mk || qShow || clipped){
+        const up = c==="up", dn = c==="dn";
+        d.symbol = clipped ? "pin" : (up||dn ? "triangle" : "circle");
+        d.symbolRotate = dn ? 180 : 0;
+        d.symbolSize = clipped ? 20 : (up||dn ? 11 : (mk?6:7));
+        d.itemStyle = {color: up?above:dn?below:p.color, borderColor: qShow ? (q.type==="outlier"?qout:warn) : panel,
+                       borderWidth: qShow?2.5:1.5, borderType: qShow ? (q.type==="outlier"?"dotted":"dashed") : "solid"};
+      }
+      const showLab = clipped || (labMode==="all") || (labMode==="auto" && (c!=="in" || i===lastIdx || qShow));
+      if(showLab) d.label = {show:true, position: clipped?"left":c==="dn"?"bottom":"top", distance:6,
+        formatter: (clipped?"↑":"") + (lq || fmt(v,dec)), color: c==="up"?above:c==="dn"?below:ink2, fontSize:11, fontFamily:css("--f-num")};
+      return d;
+    });
+    const s = {
+      name:r.name, type:"line", data, connectNulls:!!o.gaps, smooth:false,
+      showSymbol: true, symbol: (mk||isolated) ? "circle" : "none", symbolSize: mk?6:(isolated?4:0),
+      lineStyle:{width: p.emph ? 2.4 : 1.3, color:p.color, opacity: p.dim ? (names.length>8?0.55:0.3) : 1},
+      itemStyle:{color:p.color, opacity: p.dim && !mk ? .6 : 1},
+      z: p.emph ? 5 : 2, emphasis:{focus:"series", lineStyle:{width:3}}, labelLayout:{hideOverlap:true}, clip:true
+    };
+    if(o.mean && p.emph && st.n && emphN<=3){
+      const b = band(st);
+      s.markLine = {silent:true, symbol:"none", data:[{yAxis:st.mean, lineStyle:{color:p.color, type:[4,4], width:1.2},
+        label:{show:true, position:"insideEndTop", formatter:`평균 ${fmt(st.mean,dec)}`, color:ink2, fontSize:11}}]};
+      if(b && b[1]>b[0] && emphN<=2) s.markArea = {silent:true, itemStyle:{color:p.color, opacity:.08},
+        data:[[{yAxis: log? Math.max(b[0], st.min*0.9) : b[0]}, {yAxis:b[1]}]]};
+    }
+    ser.push(s);
+  }
+  if(o.limits){
+    const L = (D.limits[item]||[]).filter(l=>l.max!=null), t = targetOf(item);
+    const vmax = cap ?? Math.max(...all.filter(x=>x!=null), 0);
+    const seen = new Set(), lines = [];
+    L.forEach(l=>{ if(seen.has(l.max)) return; seen.add(l.max); if(l.max <= vmax*1.15) lines.push({yAxis:l.max, label:{formatter:`${l.code} ≤${l.max}`}}); });
+    if(t!=null) lines.push({yAxis:t, lineStyle:{color:css("--accent"), type:"solid", width:1.4}, label:{formatter:`목표 ${t}`, color:css("--accent"), fontWeight:600}});
+    if(lines.length) ser.push({name:"__limits", type:"line", data:[], silent:true, tooltip:{show:false},
+      markLine:{silent:true, symbol:"none", lineStyle:{color:ink3, type:[2,4], width:1}, label:{position:"insideStartTop", color:ink3, fontSize:10.5}, data:lines}});
+  }
+  const means = Object.fromEntries(rows.map(r=>[r.name, stats(r.values)]));
+  return {
+    animationDuration:350, animationDurationUpdate:250,
+    grid: compact ? {left:44,right:14,top:24,bottom:26} : {left:56, right:28, top:30, bottom: cats.length>24?64:36},
+    textStyle:{fontFamily:css("--f-ui")},
+    tooltip:{trigger:"axis", confine:true, backgroundColor:panel, borderColor:line, textStyle:{color:ink,fontSize:12},
+      axisPointer:{type:"line", lineStyle:{color:ink3, type:"dashed"}},
+      formatter: ps => tooltipHtml(ps, cats, dec, unit, plan, means)},
+    xAxis:{type:"category", data:cats, boundaryGap:false, axisLine:{lineStyle:{color:line}}, axisTick:{show:false}, axisLabel:{color:ink2, fontFamily:css("--f-num")}},
+    yAxis:{type: log?"log":"value", logBase:10, max: cap ?? undefined, splitLine:{lineStyle:{color:css("--line-2")}},
+      axisLabel:{color:ink2, fontFamily:css("--f-num")}},
+    dataZoom: cats.length>24 ? [{type:"inside"},{type:"slider", height:18, bottom:8}] : [{type:"inside"}],
+    series:ser, _cap:cap
+  };
+}
+function tooltipHtml(ps, cats, dec, unit, plan, means){
+  ps = ps.filter(p=>p.seriesName!=="__limits" && p.data && p.data._raw!=null);
+  if(!ps.length) return "";
+  const idx = ps[0].dataIndex;
+  const rows = ps.map(p=>({n:p.seriesName, v:p.data._raw, c:plan[p.seriesName]?.color, e:plan[p.seriesName]?.emph, k:p.data._c, q:p.data._q, lq:p.data._lq}));
+  rows.sort((a,b)=> (b.e-a.e) || (b.v-a.v));
+  const lim = 14, more = rows.length - lim, ab = col("above"), be = col("below");
+  const lines = rows.slice(0,lim).map(r=>{
+    const g = r.k==="up"?`<span style="color:${ab}">▲</span>`:r.k==="dn"?`<span style="color:${be}">▼</span>`:"";
+    const q = r.q ? ` <span style="color:${r.q.type==="outlier"?css("--qc-out"):css("--warn")}">${QC_LABEL[r.q.type]}</span>` : "";
+    return `<div style="display:flex;gap:8px;align-items:center;${r.e?"font-weight:600":""}"><span style="width:10px;height:3px;background:${r.c};border-radius:2px"></span><span style="flex:1">${esc(r.n)}${q}</span><span style="font-family:${css("--f-num")}">${r.lq||fmt(r.v,dec)}</span>${g}</div>`;
+  }).join("");
+  const one = rows.length===1 && means[rows[0].n]?.n ? `<div style="color:${css("--ink-3")};margin-top:4px">평균 ${fmt(means[rows[0].n].mean,dec)} · ${bandText()||"판정 끔"}</div>` : "";
+  return `<div style="min-width:190px"><div style="color:${css("--ink-3")};margin-bottom:4px">${cats[idx]} · ${unit}</div>${lines}${more>0?`<div style="color:${css("--ink-3")}">외 ${more}개 지점</div>`:""}${one}</div>`;
+}
+function legendHtml(el, names, plan){
+  const emph = names.filter(n=>plan[n].emph), rest = names.length - emph.length;
+  let h = emph.map(n=>`<button class="li" data-st="${esc(n)}" title="눌러서 강조 전환"><span class="ln" style="background:${plan[n].color}"></span>${esc(n)}</button>`).join("");
+  if(rest>0) h += `<span class="li muted"><span class="ln" style="background:${col("base")}"></span>그 밖의 지점 ${rest}개</span>`;
+  if(S.opt.band!=="off") h += `<span class="li muted"><span style="color:${col("above")}">▲</span>${bandText()}보다 높음 <span style="color:${col("below")}">▼</span>낮음</span>`;
+  el.innerHTML = h;
+  el.querySelectorAll(".li[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+}
+
+/* ═════════ 차트 인스턴스 ═════════ */
+const charts = {};
+function chartOn(id){
+  const el = $(id);
+  if(!charts[id]){ charts[id] = echarts.init(el, null, {renderer:"canvas"}); new ResizeObserver(()=>charts[id].resize()).observe(el); }
+  return charts[id];
+}
+const cache = {};
+
+/* ═════════ 상단 · 사이드 ═════════ */
+function setView(v){ S.view = v; document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected", x.dataset.view===v)); refresh(); scrollTo({top:0}); }
+function renderHeader(){
+  $("ver").textContent = "v" + (D.version||"2");
+  $("meta").textContent = `${mLong(M[0])} ~ ${mLong(M[M.length-1])} · 지점 ${ST.length}개 · 생성 ${D.generated}`;
+  const seg = $("itemSeg");
+  seg.innerHTML = ITEMS.map(i=>`<button data-it="${i.code}" aria-pressed="${i.code===S.item}" title="${esc(i.name)}">${i.code}</button>`).join("");
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.item=b.dataset.it; seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b)); refresh(); });
+  document.querySelectorAll("#tabs button").forEach(b=>{ b.setAttribute("aria-selected", b.dataset.view===S.view); b.onclick=()=>setView(b.dataset.view); });
+  const sq = S.qcSel; S.qcSel = false; const nq = qcGroups().filter(g=>g.type!=="coord").length; S.qcSel = sq; $("qcCnt").textContent = nq || ""; $("qcCnt").hidden = !nq;
+}
+function renderSide(){
+  const basins = [...new Set(ST.map(s=>s.basin))];
+  const bc = $("basinChips");
+  bc.innerHTML = basins.map(b=>{ const all = ST.filter(s=>s.basin===b); const on = all.every(s=>S.sel.has(s.name)) && S.sel.size===all.length;
+    return `<button class="chip ${on?"on":""}" data-b="${esc(b)}">${esc(b)}만</button>`; }).join("");
+  bc.querySelectorAll("button").forEach(x=>x.onclick=()=>{ S.sel = new Set(ST.filter(s=>s.basin===x.dataset.b).map(s=>s.name)); refresh(); });
+  const q = S.q.trim();
+  const match = s => !q || (s.name+s.river+s.basin+s.addr).includes(q);
+  const plan = colorPlan(selectedOrdered());
+  let h = "";
+  for(const b of basins){
+    const bs = ST.filter(s=>s.basin===b && match(s)); if(!bs.length) continue;
+    const allOn = bs.every(s=>S.sel.has(s.name)), someOn = bs.some(s=>S.sel.has(s.name));
+    h += `<div class="basin"><div class="bh"><input type="checkbox" data-grp="basin" data-k="${esc(b)}" ${allOn?"checked":""} ${!allOn&&someOn?'data-ind="1"':""} aria-label="${esc(b)} 전체">${esc(b)}</div>`;
+    for(const rv of [...new Set(bs.map(s=>s.river))]){
+      const rs = bs.filter(s=>s.river===rv);
+      if(rs.length>1){ const a = rs.every(s=>S.sel.has(s.name)), so = rs.some(s=>S.sel.has(s.name));
+        h += `<div class="river"><input type="checkbox" data-grp="river" data-k="${esc(rv)}" ${a?"checked":""} ${!a&&so?'data-ind="1"':""} aria-label="${esc(rv)} 전체">${esc(rv)}</div>`; }
+      for(const s of rs){
+        const on = S.sel.has(s.name), hl = S.hl.has(s.name);
+        const c = S.custom[s.name] || ((plan[s.name]?.emph || hl) ? plan[s.name]?.color : null) || col("base");
+        h += `<div class="st ${hl?"hl":""}"><input type="checkbox" id="c_${s.id}" data-st="${esc(s.name)}" ${on?"checked":""}>
+          <label for="c_${s.id}" title="${esc(s.addr)}">${esc(s.name)}${s.note?`<span class="note">${esc(s.note)}</span>`:""}</label>
+          <button class="star" data-hl="${esc(s.name)}" aria-pressed="${hl}" title="강조">${hl?"★":"☆"}</button>
+          <span class="sw ${S.custom[s.name]?"custom":""}" style="background:${c}" title="색상 지정(오른쪽 클릭: 기본색)" data-sw="${esc(s.name)}"><input type="color" value="${toHex(c)}" data-col="${esc(s.name)}" aria-label="${esc(s.name)} 색상"></span></div>`;
+      }
+    }
+    h += `</div>`;
+  }
+  const list = $("stlist"); list.innerHTML = h;
+  list.querySelectorAll("input[data-ind]").forEach(x=>x.indeterminate=true);
+  list.querySelectorAll("input[data-st]").forEach(x=>x.onchange=()=>{ x.checked?S.sel.add(x.dataset.st):S.sel.delete(x.dataset.st); refresh(); });
+  list.querySelectorAll("input[data-grp]").forEach(x=>x.onchange=()=>{
+    const key = x.dataset.grp==="basin"?"basin":"river";
+    ST.filter(s=>s[key]===x.dataset.k).forEach(s=> x.checked?S.sel.add(s.name):S.sel.delete(s.name)); refresh(); });
+  list.querySelectorAll("button[data-hl]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.hl));
+  list.querySelectorAll("input[data-col]").forEach(x=>{
+    x.oninput=()=>{ S.custom[x.dataset.col]=x.value; x.parentElement.style.background=x.value; };
+    x.onchange=()=>{ S.hl.add(x.dataset.col); S.sel.add(x.dataset.col); refresh(); };
+  });
+  list.querySelectorAll("[data-sw]").forEach(x=>x.oncontextmenu=e=>{ e.preventDefault(); delete S.custom[x.dataset.sw]; refresh(); toast(`${x.dataset.sw} 색상을 기본값으로 되돌렸습니다`); });
+  $("selCount").textContent = `${S.sel.size}/${ST.length} 선택 · 강조 ${[...S.hl].filter(n=>S.sel.has(n)).length}`;
+}
+function toHex(c){ if(/^#[0-9a-f]{6}$/i.test(c)) return c; const x=document.createElement("canvas").getContext("2d"); x.fillStyle=c; return /^#[0-9a-f]{6}$/i.test(x.fillStyle)?x.fillStyle:"#888888"; }
+function toggleHl(n){ S.hl.has(n)?S.hl.delete(n):(S.hl.add(n), S.sel.add(n)); refresh(); }
+
+/* ═════════ KPI ═════════ */
+function renderKpis(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months(), el = $("kpis");
+  if(!names.length){ el.innerHTML = `<div class="kpi" style="grid-column:1/-1"><div class="k">선택된 지점이 없습니다</div><div class="s">왼쪽에서 지점을 선택하세요.</div></div>`; return; }
+  // 1) 최근 측정월
+  let li = -1; for(let i=ms.length-1;i>=0;i--) if(names.some(n=>series(n,S.item)[i]!=null)){ li=i; break; }
+  let t1 = `<div class="k">최근 측정월</div><div class="v">-</div>`;
+  if(li>=0){
+    const cur = names.map(n=>series(n,S.item)[li]).filter(v=>v!=null), cm = stats(cur).mean;
+    let sub = `${cur.length}개 지점 평균`;
+    if(li>0){ let up=0, dn=0, dsum=0, dn_=0;
+      names.forEach(n=>{ const a=series(n,S.item)[li-1], b=series(n,S.item)[li]; if(a!=null&&b!=null){ dsum+=b-a; dn_++; if(b>a) up++; else if(b<a) dn++; } });
+      if(dn_){ const d = dsum/dn_; sub = `전월 대비 <b class="${d>0?"up":d<0?"dn":""}">${d>0?"+":""}${fmt(d,it.dec)}</b> · 상승 ${up} · 하락 ${dn}`; } }
+    t1 = `<div class="k">${mLong(ms[li])} 평균 (${it.code})</div><div class="v num">${fmt(cm,it.dec)}<small>${it.unit}</small></div><div class="s">${sub}</div>`;
+  }
+  // 2) 기간 평균 최고 지점
+  const ranked = names.map(n=>({n, s:stats(series(n,S.item))})).filter(x=>x.s.n).sort((a,b)=>b.s.mean-a.s.mean);
+  const top = ranked[0];
+  const t2 = `<div class="k">기간 평균이 가장 높은 지점</div><div class="v">${top?esc(top.n):"-"} <small class="num">${top?fmt(top.s.mean,it.dec)+" "+it.unit:""}</small></div><div class="s">${ranked[1]?`2위 ${esc(ranked[1].n)} ${fmt(ranked[1].s.mean,it.dec)}`:""}</div>`;
+  // 3) 단일 최고값
+  let mx = {v:-Infinity};
+  names.forEach(n=>series(n,S.item).forEach((v,i)=>{ if(v!=null && v>mx.v) mx={v,n,m:ms[i]}; }));
+  const mq = mx.n ? qcTop(mx.n, mx.m, S.item) : null;
+  const t3 = `<div class="k">단일 최고값</div><div class="v num">${mx.n?fmt(mx.v,it.dec):"-"}<small>${it.unit}</small></div><div class="s">${mx.n?esc(mx.n)+" · "+mLong(mx.m):""}${mq?` · <span class="t-${mq.type}">${QC_LABEL[mq.type]}</span>`:""}</div>`;
+  // 4) 기준
+  let t4; const t = targetOf(S.item), L = D.limits[S.item];
+  if(t!=null){ const ok = ranked.filter(x=>x.s.mean<=t).length;
+    t4 = `<div class="k">목표(${t}${it.unit}) 달성 지점</div><div class="v num">${ok}<small>/ ${ranked.length}</small></div><div class="s">지점별 기간 평균 기준</div>`; }
+  else if(L && L.length){ const cnt = {}; ranked.forEach(x=>{ const g = grade(S.item, x.s.mean); if(g) cnt[g.i]=(cnt[g.i]||0)+1; });
+    const good = Object.entries(cnt).filter(([i])=>+i<=2).reduce((a,[,c])=>a+c,0);
+    t4 = `<div class="k">II등급(약간좋음) 이상 지점</div><div class="v num">${good}<small>/ ${ranked.length}</small></div><div class="s">${Object.entries(cnt).sort((a,b)=>a[0]-b[0]).map(([i,c])=>`${L[i].code} ${c}`).join(" · ")}</div>`; }
+  else t4 = `<div class="k">생활환경기준</div><div class="v" style="font-size:15px;padding-top:6px">해당 없음</div><div class="s">${esc(it.desc||"")}</div>`;
+  // 5) 자료 점검
+  const nameSet = new Set(names), mset = new Set(ms);
+  const qs = D.qc.filter(q=>q.type!=="coord" && nameSet.has(q.st) && mset.has(q.m) && (q.item===S.item || q.item==null));
+  const byT = {}; qs.forEach(q=>byT[q.type]=(byT[q.type]||0)+1);
+  const t5 = `<div class="k">자료 점검 (${it.code})</div><div class="v num">${qs.length}<small>건</small></div><div class="s">${Object.entries(byT).map(([k,v])=>`${QC_LABEL[k]} ${v}`).join(" · ")||"점검할 값 없음"}</div>`;
+  el.innerHTML = `<div class="kpi">${t1}</div><div class="kpi">${t2}</div><div class="kpi">${t3}</div><div class="kpi">${t4}</div><div class="kpi click ${qs.length?"warn":""}" id="kpiQc" title="자료 점검 화면으로">${t5}</div>`;
+  $("kpiQc").onclick = ()=>{ S.qcFilter="all"; setView("qc"); };
+}
+
+/* ═════════ 시계열 + 표 ═════════ */
+function rowsFor(names, item){ const ms = months(); return names.map(n=>({name:n, values:series(n,item)})); }
+function renderTs(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months();
+  $("tsTitle").textContent = `${it.name} 월별 변화`;
+  $("tsSub").textContent = `${names.length}개 지점 · ${mLong(ms[0])}~${mLong(ms[ms.length-1])} · 단위 ${it.unit}`;
+  const rows = rowsFor(names, S.item), plan = colorPlan(names);
+  legendHtml($("tsLegend"), names, plan);
+  const opt = trendOption({cats:ms.map(mLabel), mkeys:ms, rows, item:S.item, dec:it.dec, unit:it.unit, plan});
+  if(opt._cap) $("tsSub").textContent += ` · y축 ${fmt(opt._cap,it.dec)}에서 자름(📍 표시 값은 실제 값)`;
+  chartOn("tsChart").setOption(opt, true);
+  renderTable(rows, ms, it, plan);
+}
+function cellHtml(st, m, item, v, s, dec){
+  if(v==null) return `<td class="num"></td>`;
+  const c = cls(v, s), q = qcAt(st, m, item), lq = loqText(st, m, item), date = D.dates[st]?.[m];
+  const qc = q[0] ? ` q-${q[0].type}` : "", tip = [date?"채취일 "+date:"", ...q.map(x=>QC_LABEL[x.type]+": "+x.note)].filter(Boolean).join("\n");
+  return `<td class="num ${c==="up"?"up":c==="dn"?"dn":""}${qc}${lq?" q-loq":""}" title="${esc(tip)}">${lq||fmt(v,dec)}${c==="up"?'<span class="g">▲</span>':c==="dn"?'<span class="g">▼</span>':""}</td>`;
+}
+function renderTable(rows, ms, it, plan){
+  const hasJ = !!((D.limits[S.item]||[]).length || targetOf(S.item)!=null);
+  let h = `<thead><tr><th class="l stc">지점</th><th class="l">하천</th>${ms.map(m=>`<th>${mLabel(m)}</th>`).join("")}<th>최대</th><th>최소</th><th>평균</th><th>표준편차</th>${hasJ?`<th class="l" title="선택 기간 평균으로 판정">${targetOf(S.item)!=null?"목표":"생활환경기준"}*</th>`:""}</tr></thead><tbody>`;
+  const tsv = [["지점","하천",...ms,"최대","최소","평균","표준편차",...(hasJ?["판정"]:[])]];
+  for(const r of rows){
+    const s = stats(r.values), st = stByName[r.name], j = judge(S.item, s.mean);
+    h += `<tr class="${S.hl.has(r.name)?"hl":""}"><td class="l stc" data-st="${esc(r.name)}" title="${esc(st.addr)}"><span class="dot" style="background:${plan[r.name].color}"></span>${esc(r.name)}</td><td class="l">${esc(st.river)}</td>${r.values.map((v,i)=>cellHtml(r.name, ms[i], S.item, v, s, it.dec)).join("")}
+      <td class="num stat">${fmt(s.max,it.dec)}</td><td class="num stat">${fmt(s.min,it.dec)}</td><td class="num stat"><b>${fmt(s.mean,it.dec)}</b></td><td class="num stat">${fmt(s.sd,it.dec)}</td>${hasJ?`<td class="l">${j.html}</td>`:""}</tr>`;
+    tsv.push([r.name, st.river, ...r.values.map((v,i)=>loqText(r.name,ms[i],S.item)||(v??"")), s.max??"", s.min??"", s.mean!=null?+s.mean.toFixed(4):"", s.sd!=null?+s.sd.toFixed(4):"", ...(hasJ?[j.text]:[])]);
+  }
+  const tb = $("tbl"); tb.innerHTML = h + `</tbody>`;
+  tb.querySelectorAll("td[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+  $("tblSub").textContent = `${it.name} (${it.unit}) · ${rows.length}개 지점`;
+  $("tblFoot").innerHTML = `<span>${S.opt.band==="off"?"▲▼ 표시 꺼짐":`<b class="up">▲</b> ${bandText()}보다 높음 · <b class="dn">▼</b> 낮음 (지점별·선택 기간 기준)`}</span>
+    <span><i class="key k-rep"></i>검토필요·전월 동일</span><span><i class="key k-out"></i>이상값 의심</span><span>* 선택 기간 평균으로 판정(연간 판정과 다를 수 있음)</span><span>지점명을 누르면 강조 전환</span>`;
+  cache.tsv = tsv; cache.fname = `${S.item}_${ms[0]}_${ms[ms.length-1]}`;
+}
+
+/* ═════════ 상·하류 종단 ═════════ */
+function monthRamp(n){
+  const stops = [css("--q250"),css("--q400"),css("--q550"),css("--q700")].map(toHex);
+  return i => { const t = n<=1?1:i/(n-1), p = t*(stops.length-1), k = Math.min(stops.length-2, Math.floor(p)), f = p-k;
+    const a = stops[k].match(/\w\w/g).map(x=>parseInt(x,16)), b = stops[k+1].match(/\w\w/g).map(x=>parseInt(x,16));
+    return "#"+a.map((x,j)=>Math.round(x+(b[j]-x)*f).toString(16).padStart(2,"0")).join(""); };
+}
+function renderProf(){
+  const it = itemOf(S.item), ms = months();
+  const seg = $("pfRivers");
+  seg.innerHTML = RIVERS.map(r=>`<button data-r="${esc(r)}" aria-pressed="${r===S.profRiver}">${esc(r)} ${ST.filter(s=>s.river===r).length}</button>`).join("");
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.profRiver=b.dataset.r; refresh(); });
+  const chain = ST.filter(s=>s.river===S.profRiver);
+  $("pfTitle").textContent = `${S.profRiver} ${it.name} 상류 → 하류`;
+  $("pfSub").textContent = `${chain.length}개 지점 · 정렬순서 기준 · 단위 ${it.unit}`;
+  const cats = chain.map(s=>s.name);
+  const ramp = monthRamp(ms.length), ink2 = css("--ink-2"), ink3 = css("--ink-3"), panel = css("--panel");
+  let last = -1; for(let i=ms.length-1;i>=0;i--) if(chain.some(s=>series(s.name,S.item)[i]!=null)){ last=i; break; }
+  const means = chain.map(s=>stats(series(s.name,S.item)).mean ?? null);
+  const ser = [];
+  ms.forEach((m,i)=>{
+    if(S.profHidden.has(m)) return;
+    const isLast = i===last;
+    ser.push({name:mLong(m), type:"line", data:chain.map(s=>{ const v = series(s.name,S.item)[i]; const q = v!=null?qcTop(s.name,m,S.item):null;
+        return v==null?{value:null}:{value:v, _q:q, itemStyle: q?{borderColor:q.type==="outlier"?css("--qc-out"):css("--warn"), borderWidth:2.5, borderType:q.type==="outlier"?"dotted":"dashed"}:undefined}; }),
+      connectNulls:true, symbol:"circle", symbolSize:isLast?8:5, z:isLast?6:2,
+      lineStyle:{width:isLast?2.6:1.2, color:ramp(i), opacity:isLast?1:.75}, itemStyle:{color:ramp(i)},
+      label:{show:isLast, position:"top", formatter:p=>fmt(p.value,it.dec), color:ink2, fontSize:11, fontFamily:css("--f-num")}, labelLayout:{hideOverlap:true},
+      emphasis:{focus:"series"}});
+  });
+  ser.push({name:"기간 평균", type:"line", data:means, symbol:"rect", symbolSize:7, z:7, lineStyle:{width:2.2, type:[6,4], color:css("--ink")}, itemStyle:{color:css("--ink")},
+    label:{show:S.profHidden.has("__mean")?false:last<0, formatter:p=>fmt(p.value,it.dec)}});
+  if(S.profHidden.has("__mean")) ser.pop();
+  if(S.opt.limits){
+    const t = targetOf(S.item), L = (D.limits[S.item]||[]).filter(l=>l.max!=null);
+    const vmax = Math.max(...chain.flatMap(s=>series(s.name,S.item)).filter(v=>v!=null), 0), seen = new Set(), lines = [];
+    L.forEach(l=>{ if(!seen.has(l.max) && l.max<=vmax*1.15){ seen.add(l.max); lines.push({yAxis:l.max, label:{formatter:`${l.code} ≤${l.max}`}}); } });
+    if(t!=null) lines.push({yAxis:t, lineStyle:{color:css("--accent"), type:"solid", width:1.4}, label:{formatter:`목표 ${t}`, color:css("--accent")}});
+    if(lines.length) ser.push({name:"__limits", type:"line", data:[], silent:true, markLine:{silent:true, symbol:"none", lineStyle:{color:ink3, type:[2,4]}, label:{position:"insideStartTop", color:ink3, fontSize:10.5}, data:lines}});
+  }
+  chartOn("pfChart").setOption({
+    animationDuration:300, textStyle:{fontFamily:css("--f-ui")}, grid:{left:56,right:28,top:30,bottom:cats.length>6?70:40},
+    tooltip:{trigger:"axis", confine:true, backgroundColor:panel, borderColor:css("--line"), textStyle:{color:css("--ink"),fontSize:12},
+      formatter:ps=>{ const s = chain[ps[0].dataIndex]; const extra = (s.addr.match(/\(([^)]*)\)/)||[])[1];
+        return `<b>${esc(s.name)}</b>${extra?` <span style="color:${ink3}">${esc(extra)}</span>`:""}<br>`+ps.filter(p=>p.seriesName!=="__limits"&&p.value!=null).map(p=>`<span style="display:inline-block;width:10px;height:3px;background:${p.color};vertical-align:middle;margin-right:6px"></span>${p.seriesName} <b style="font-family:${css("--f-num")}">${fmt(p.value,it.dec)}</b>${p.data?._q?` <span style="color:${css("--warn")}">${QC_LABEL[p.data._q.type]}</span>`:""}`).join("<br>"); }},
+    xAxis:{type:"category", data:cats, axisLabel:{color:ink2, rotate:cats.length>6?28:0, interval:0}, axisLine:{lineStyle:{color:css("--line")}}, axisTick:{show:false}},
+    yAxis:{type:S.opt.scale==="log"?"log":"value", splitLine:{lineStyle:{color:css("--line-2")}}, axisLabel:{color:ink2, fontFamily:css("--f-num")}},
+    series:ser
+  }, true);
+  // 범례(월 켜고 끄기)
+  const lg = $("pfLegend");
+  lg.innerHTML = `<button class="li ${S.profHidden.has("__mean")?"off":""}" data-m="__mean"><span class="ln" style="background:${css("--ink")}"></span>기간 평균</button>` +
+    ms.map((m,i)=>`<button class="li ${S.profHidden.has(m)?"off":""}" data-m="${m}"><span class="ln" style="background:${ramp(i)};height:${i===last?4:3}px"></span>${mLabel(m)}${i===last?" (최근)":""}</button>`).join("") +
+    `<button class="li" data-m="__only">최근월만</button><button class="li" data-m="__all">전체 월</button>`;
+  lg.querySelectorAll(".li").forEach(b=>b.onclick=()=>{ const m=b.dataset.m;
+    if(m==="__only"){ S.profHidden = new Set(ms.filter((x,i)=>i!==last)); }
+    else if(m==="__all"){ S.profHidden = new Set(); }
+    else S.profHidden.has(m)?S.profHidden.delete(m):S.profHidden.add(m); refresh(); });
+  // 구간별 변화 표
+  let h = `<thead><tr><th class="l stc">지점</th><th class="l">위치</th><th>기간 평균</th><th>상류 대비</th><th>변화율</th>${ms.map(m=>`<th>${mLabel(m)}</th>`).join("")}</tr></thead><tbody>`;
+  const tsv = [["지점","기간 평균","상류 대비","변화율(%)",...ms]];
+  chain.forEach((s,i)=>{
+    const sv = series(s.name,S.item), st = stats(sv), prev = i>0?means[i-1]:null, d = (st.n && prev!=null)? st.mean-prev : null, r = d!=null && prev? d/prev*100 : null;
+    const big = r!=null && r>=30, extra = (s.addr.match(/\(([^)]*)\)/)||[])[1]||"";
+    h += `<tr class="${S.hl.has(s.name)?"hl":""}"><td class="l stc" data-st="${esc(s.name)}">${esc(s.name)}</td><td class="l" style="color:var(--ink-3)">${esc(extra)}</td><td class="num stat"><b>${fmt(st.mean,it.dec)}</b></td>
+      <td class="num ${d>0?"up":d<0?"dn":""}">${d==null?"":(d>0?"+":"")+fmt(d,it.dec)}</td><td class="num ${big?"up":""}">${r==null?"":(r>0?"+":"")+r.toFixed(0)+"%"}${big?' <span class="g">▲</span>':""}</td>
+      ${sv.map((v,k)=>cellHtml(s.name, ms[k], S.item, v, st, it.dec)).join("")}</tr>`;
+    tsv.push([s.name, st.mean!=null?+st.mean.toFixed(4):"", d!=null?+d.toFixed(4):"", r!=null?+r.toFixed(1):"", ...sv.map(v=>v??"")]);
+  });
+  const tb = $("pfTbl"); tb.innerHTML = h + "</tbody>";
+  tb.querySelectorAll("td[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+  cache.pfTsv = tsv;
+}
+
+/* ═════════ 히트맵 ═════════ */
+function renderHeat(){
+  const it = itemOf(S.item), names = selectedOrdered(), ms = months();
+  $("hmTitle").textContent = `${it.name} 지점 × 월`;
+  $("hmSub").textContent = S.heatMode==="value" ? `측정값(${it.unit}) · 진할수록 높음` : `지점 평균 대비 증감률 · 빨강=평균보다 높음, 파랑=낮음`;
+  document.querySelectorAll("#hmMode button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.m===S.heatMode));
+  const el = $("hmChart"); el.style.height = Math.max(260, names.length*22 + 96) + "px";
+  const ch = chartOn("hmChart"); ch.resize();
+  const ys = names.slice().reverse(), ink = css("--ink"), panel = css("--panel");
+  const data = [], vals = [];
+  ys.forEach((n,yi)=>{ const v = series(n,S.item), s = stats(v);
+    v.forEach((x,xi)=>{ if(x==null) return; const dev = s.mean? (x-s.mean)/s.mean*100 : 0, val = S.heatMode==="value"?x:dev;
+      data.push({value:[xi, yi, val], raw:x, dev, q:qcTop(n, ms[xi], S.item), lq:loqText(n, ms[xi], S.item)}); vals.push(val); }); });
+  vals.sort((a,b)=>a-b);
+  const q = p => vals.length? vals[Math.min(vals.length-1, Math.floor(p*(vals.length-1)))] : 0;
+  const vm = S.heatMode==="value"
+    ? {min: vals[0]??0, max: q(.97)||1, inRange:{color:[css("--q100"),css("--q250"),css("--q400"),css("--q550"),css("--q700")]}}
+    : (()=>{ const m = Math.max(Math.abs(q(.03)), Math.abs(q(.97)), 10); return {min:-m, max:m, inRange:{color:[css("--q550"),css("--q250"),css("--mid"),css("--r400"),css("--r600")]}}; })();
+  const rng = (vm.max - vm.min) || 1;
+  const labColor = v => S.heatMode==="value" ? ((v-vm.min)/rng > 0.55 ? "#ffffff" : ink) : (Math.abs(v)/vm.max > 0.6 ? "#ffffff" : ink);
+  data.forEach(d=>{ d.label = {color: labColor(d.value[2])};
+    if(d.q) d.itemStyle = {borderColor: d.q.type==="outlier"?css("--qc-out"):css("--warn"), borderWidth:2.5, borderType: d.q.type==="outlier"?"dotted":"dashed"}; });
+  ch.setOption({
+    animation:false, textStyle:{fontFamily:css("--f-ui")}, grid:{left:96, right:20, top:28, bottom:64},
+    tooltip:{confine:true, backgroundColor:panel, borderColor:css("--line"), textStyle:{color:ink,fontSize:12},
+      formatter:p=>`<b>${esc(ys[p.value[1]])}</b> · ${mLong(ms[p.value[0]])}<br>${p.data.lq||fmt(p.data.raw,it.dec)} ${it.unit}<br><span style="color:${css("--ink-3")}">지점 평균 대비 ${p.data.dev>=0?"+":""}${p.data.dev.toFixed(0)}%</span>${p.data.q?`<br><span style="color:${css("--warn")}">${QC_LABEL[p.data.q.type]}: ${esc(p.data.q.note)}</span>`:""}`},
+    xAxis:{type:"category", data:ms.map(mLabel), position:"top", axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:css("--ink-2"), fontFamily:css("--f-num")}},
+    yAxis:{type:"category", data:ys, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:css("--ink-2"), formatter:n=>S.hl.has(n)?`{b|${n}}`:n, rich:{b:{fontWeight:700,color:ink}}}},
+    visualMap:{type:"continuous", ...vm, calculable:false, orient:"horizontal", left:"center", bottom:8, itemHeight:220, itemWidth:10,
+      textStyle:{color:css("--ink-2")}, formatter: v=> S.heatMode==="value"? fmt(v,it.dec) : (v>0?"+":"")+Math.round(v)+"%", dimension:2},
+    series:[{type:"heatmap", data, itemStyle:{borderColor:panel, borderWidth:2, borderRadius:3},
+      label:{show:true, fontSize:10.5, fontFamily:css("--f-num"), formatter:p=>p.data.lq||fmt(p.data.raw, Math.min(it.dec,2))},
+      emphasis:{itemStyle:{borderColor:ink, borderWidth:1.5}}}]
+  }, true);
+  ch.off("click"); ch.on("click", p=>{ const n = ys[p.value[1]]; S.hl.add(n); setView("ts"); toast(`${n} 강조`); });
+}
+
+/* ═════════ 지도 ═════════ */
+let map, geoLayer, mkLayer, labLayer, lineLayer, netLayer, tiles = [], bannerSt = null, tileStat = {ok:0, err:0, key:""};
+const VW = {일반:["Base","png"], 백지도:["white","png"], 야간:["midnight","png"], 위성:["Satellite","jpeg"], 하이브리드:["Satellite","jpeg","Hybrid"]};
+function rampColor(t){
+  const stops = [css("--q100"),css("--q250"),css("--q400"),css("--q550"),css("--q700")].map(toHex);
+  t = Math.max(0, Math.min(1, t)); const p = t*(stops.length-1), i = Math.min(stops.length-2, Math.floor(p)), f = p-i;
+  const a = stops[i].match(/\w\w/g).map(x=>parseInt(x,16)), b = stops[i+1].match(/\w\w/g).map(x=>parseInt(x,16));
+  return "#"+a.map((x,k)=>Math.round(x+(b[k]-x)*f).toString(16).padStart(2,"0")).join("");
+}
+function isDark(){ return document.documentElement.dataset.theme==="dark" || (document.documentElement.dataset.theme!=="light" && matchMedia("(prefers-color-scheme: dark)").matches); }
+function baseName(){ const b = S.base==="자동" ? (isDark()?"야간":"일반") : S.base; return CFG.vworldKey ? b : "없음"; }
+function setTiles(){
+  const b = baseName(), key = b+"|"+CFG.vworldKey;
+  if(tileStat.key===key) return;
+  tiles.forEach(t=>map.removeLayer(t)); tiles = []; tileStat = {ok:0, err:0, key}; $("mpMsg").hidden = true;
+  if(b!=="없음" && VW[b]){
+    const [lay, ext, over] = VW[b];
+    const mk = (l,e) => L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${CFG.vworldKey}/${l}/{z}/{y}/{x}.${e}`,
+      {minZoom:6, maxZoom:19, maxNativeZoom:18, attribution:'© <a href="https://www.vworld.kr" target="_blank" rel="noopener">V월드(국토교통부)</a>', errorTileUrl:""});
+    tiles.push(mk(lay,ext)); if(over) tiles.push(mk(over,"png"));
+    tiles.forEach(t=>{ t.on("tileload", ()=>tileStat.ok++); t.on("tileerror", ()=>{ tileStat.err++; checkTiles(); }); t.addTo(map); t.bringToBack(); });
+    setTimeout(checkTiles, 5000);
+  }
+  if(geoLayer) geoLayer.setStyle(geoStyle);
+  document.querySelectorAll("#mpBase button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.b===S.base));
+}
+function checkTiles(){
+  if(tileStat.err>=4 && tileStat.ok===0){
+    const file = location.protocol==="file:";
+    $("mpMsg").hidden = false;
+    $("mpMsg").innerHTML = `<button class="iconbtn" style="float:right;padding:0 6px;margin-left:6px" onclick="this.parentElement.hidden=true" aria-label="닫기">✕</button><b>V월드 배경지도를 불러오지 못했습니다.</b><br>${file?"파일을 직접 열면 V월드가 요청을 거절할 수 있습니다. 폴더의 <b>대시보드_열기.bat</b>로 열어 보세요.<br>":""}인증키 발급 때 등록한 서비스 URL과 지금 주소(${esc(location.origin==="null"?"파일":location.origin)})가 같은지, 인터넷 연결이 되는지 확인하세요. 지금은 시군 경계만 표시합니다.`;
+    tiles.forEach(t=>map.removeLayer(t)); tiles = []; if(geoLayer) geoLayer.setStyle(geoStyle);
+  }
+}
+const geoStyle = f => { const t = tiles.length>0;
+  return {color:css("--map-stroke"), weight:f.properties.focus?1.6:0.8, dashArray:f.properties.focus?null:"3 3",
+    fillColor:f.properties.focus?css("--map-focus"):css("--map-fill"), fillOpacity: t ? 0 : (f.properties.focus?.6:.35)}; };
+function initMap(){
+  if(map) return;
+  map = L.map("map", {zoomControl:false, attributionControl:true}).setView([37.93,127.15], 10);
+  L.control.zoom({position:"bottomright"}).addTo(map);
+  if(D.geo){ geoLayer = L.geoJSON(D.geo, {style:geoStyle, interactive:false}).addTo(map); }
+  lineLayer = L.layerGroup().addTo(map); netLayer = L.layerGroup().addTo(map); mkLayer = L.layerGroup().addTo(map); labLayer = L.layerGroup().addTo(map);
+  const pts = ST.filter(s=>s.lat&&s.lon).map(s=>[s.lat,s.lon]);
+  if(pts.length) map.fitBounds(pts, {paddingTopLeft:[30,60], paddingBottomRight:[innerWidth>900?450:30, 30]});
+  map.on("zoomend moveend", placeLabels);
+  const seg = $("mpBase");
+  const opts = CFG.vworldKey ? ["자동","일반","백지도","위성","하이브리드","야간","없음"] : ["없음"];
+  seg.innerHTML = opts.map(b=>`<button data-b="${b}" aria-pressed="${b===S.base}">${b==="없음"?"경계만":b}</button>`).join("");
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.base=b.dataset.b; persist(); setTiles(); });
+  if(!CFG.vworldKey){ $("mpMsg").hidden=false; $("mpMsg").textContent = "V월드 인증키가 없어 시군 경계만 표시합니다. DB '설정' 시트의 VWORLD_KEY에 키를 넣고 대시보드를 다시 만드세요."; }
+}
+function mapValue(n){
+  const v = series(n,S.item);
+  if(S.mapMonth==="mean") return stats(v).mean;
+  const idx = S.mapMonth==="last" ? v.reduce((a,x,i)=>x!=null?i:a,-1) : months().indexOf(S.mapMonth);
+  return idx>=0 ? v[idx] : null;
+}
+let labelItems = [];
+function placeLabels(){
+  if(!map) return; labLayer.clearLayers();
+  if(!S.mapLabels) return;
+  const placed = [], W = 7.2;
+  const items = labelItems.slice().sort((a,b)=>(b.hl-a.hl)||(b.v-a.v));
+  for(const it of items){
+    const p = map.latLngToContainerPoint([it.lat,it.lon]), w = it.text.length*W+12, h = 16;
+    const boxes = [{x:p.x+10, y:p.y-8, cls:""}, {x:p.x-10-w, y:p.y-8, cls:"left"}];
+    const ok = boxes.find(b=>!placed.some(o=>b.x<o.x+o.w && b.x+w>o.x && b.y<o.y+o.h && b.y+h>o.y));
+    if(!ok) continue;
+    placed.push({x:ok.x, y:ok.y, w, h});
+    L.marker([it.lat,it.lon], {interactive:false, keyboard:false, icon:L.divIcon({className:"", iconSize:[0,0],
+      html:`<span class="vlab ${ok.cls} ${it.over?"over":""}">${esc(it.text)}</span>`})}).addTo(labLayer);
+  }
+}
+function renderMap(){
+  const it = itemOf(S.item), ms = months();
+  $("mpTitle").textContent = `${it.name} 지점 분포`;
+  const sel = $("mpMonth");
+  sel.innerHTML = `<option value="last">최근 측정월</option><option value="mean">기간 평균</option>` + ms.slice().reverse().map(m=>`<option value="${m}">${mLong(m)}</option>`).join("");
+  if(!(S.mapMonth==="last"||S.mapMonth==="mean"||ms.includes(S.mapMonth))) S.mapMonth="last";
+  sel.value = S.mapMonth;
+  $("mpLabels").checked = S.mapLabels; $("mpNet").checked = S.mapNet; $("mpLines").checked = S.mapLines;
+  initMap(); setTiles(); setTimeout(()=>map.invalidateSize(), 50);
+  mkLayer.clearLayers(); lineLayer.clearLayers(); netLayer.clearLayers(); labelItems = [];
+  const vs = ST.map(s=>mapValue(s.name)).filter(v=>v!=null).sort((a,b)=>a-b);
+  const lo = vs[0] ?? 0, hi = vs[Math.floor((vs.length-1)*.95)] ?? 1;
+  if(S.mapLines){
+    RIVERS.forEach(rv=>{ const pts = ST.filter(s=>s.river===rv && s.lat).map(s=>[s.lat,s.lon]);
+      if(pts.length>1) L.polyline(pts,{color:css("--accent"),weight:2,opacity:.5,dashArray:"5 6",interactive:false}).addTo(lineLayer); });
+  }
+  if(S.mapNet) for(const n of D.network){
+    L.marker([n.lat,n.lon], {icon:L.divIcon({className:"", iconSize:[12,12], iconAnchor:[6,6], html:'<div class="netmk"></div>'}), keyboard:false})
+      .bindTooltip(`<b>국가수질측정망 ${esc(n.name)}</b><br>${esc(n.spot)} · ${esc(n.code)}<br><span style="color:var(--ink-3)">${esc(n.sub)} 중권역</span>`, {direction:"top", offset:[0,-6], className:"nm"}).addTo(netLayer);
+  }
+  const t = targetOf(S.item);
+  for(const s of ST){
+    if(!s.lat||!s.lon) continue;
+    const v = mapValue(s.name), on = S.sel.has(s.name), hl = S.hl.has(s.name), est = s.coord==="추정"||s.coord==="미입력";
+    const fill = v==null ? css("--panel-2") : rampColor((v-lo)/((hi-lo)||1));
+    const m = L.circleMarker([s.lat,s.lon], {radius: hl?11:8, color: hl?css("--ink"):css("--ink-2"), weight: hl?2.5:1.6, dashArray: est?"3 3":null,
+      fillColor:fill, fillOpacity: on?0.95:0.35, opacity: on?1:0.5});
+    m.bindTooltip(`<b>${esc(s.name)}</b> ${v!=null?fmt(v,it.dec)+" "+it.unit:"자료 없음"}${est?'<br><span style="color:var(--warn)">추정 좌표</span>':""}`, {direction:"top", offset:[0,-8], className:"nm"});
+    m.on("click", ()=>openBanner(s.name));
+    m.addTo(mkLayer);
+    if(v!=null && on) labelItems.push({lat:s.lat, lon:s.lon, v, hl:hl?1:0, text:fmt(v,it.dec), over: t!=null && v>t});
+  }
+  placeLabels();
+  const nEst = ST.filter(s=>s.coord==="추정"||s.coord==="미입력").length;
+  $("mpLegend").innerHTML = `<b>${it.code}</b> <span style="color:var(--ink-3)">${S.mapMonth==="mean"?"기간 평균":S.mapMonth==="last"?"최근 측정월":mLong(S.mapMonth)} · ${it.unit}</span>
+    <div class="bar" style="background:linear-gradient(90deg,${[0,.25,.5,.75,1].map(rampColor).join(",")})"></div>
+    <div class="ends num"><span>${fmt(lo,it.dec)}</span><span>${fmt(hi,it.dec)}+</span></div>
+    ${t!=null&&S.mapLabels?`<div class="lg"><b style="color:${col("above")}">빨간 값</b> 목표(${t}) 초과</div>`:""}
+    ${nEst?`<div class="lg"><span class="cm est"></span>점선 = 추정 좌표 ${nEst}곳</div>`:""}
+    ${S.mapNet&&D.network.length?`<div class="lg"><span class="netmk" style="width:10px;height:10px"></span>국가수질측정망(참고)</div>`:""}`;
+  if(bannerSt) openBanner(bannerSt);
+}
+function openBanner(n){
+  bannerSt = n;
+  const s = stByName[n], it = itemOf(S.item), ms = months();
+  const b = $("banner"); b.classList.remove("closed"); b.setAttribute("aria-hidden","false");
+  $("bnName").textContent = n;
+  $("bnSub").textContent = `${s.basin} · ${s.river} · ${s.addr}`;
+  const qs = D.qc.filter(q=>q.st===n && q.type!=="coord" && ms.includes(q.m));
+  $("bnWarn").innerHTML = [
+    (s.coord==="추정"||s.coord==="미입력") ? `<div class="warnchip">지도 위치는 주소로 추정한 좌표입니다. 04 좌표 도구(V월드)로 보정하세요.</div>` : (s.coordSrc?`<div class="infochip">좌표: ${esc(s.coordSrc)}</div>`:""),
+    qs.length ? `<div class="warnchip">자료 점검 ${qs.length}건: ${[...new Set(qs.map(q=>`${mLabel(q.m)} ${q.item||""} ${QC_LABEL[q.type]}`))].slice(0,6).map(esc).join(", ")}${qs.length>6?" …":""}</div>` : ""].join("");
+  const rows = [{name:n, values:series(n,S.item)}];
+  const plan = {[n]:{color: S.custom[n] || css("--s1"), emph:true, dim:false}};
+  const opt = trendOption({cats:ms.map(mLabel), mkeys:ms, rows, item:S.item, dec:it.dec, unit:it.unit, plan, compact:true, force:{labels:"all"}});
+  const ch = chartOn("bnChart"); ch.setOption(opt, true); setTimeout(()=>ch.resize(), 30);
+  const last = ms.length-1;
+  $("bnItems").innerHTML = ITEMS.map(i=>{
+    const v = series(n,i.code), k = v.reduce((a,x,j)=>x!=null?j:a,-1), sm = stats(v), val = k>=0?v[k]:null, c = cls(val, sm);
+    return `<button class="c ${i.code===S.item?"on":""}" data-it="${i.code}" title="${esc(i.name)}${k>=0?" · "+mLong(ms[k]):""}"><div class="k">${i.code}${k>=0&&k!==last?" ("+mLabel(ms[k])+")":""}</div>
+      <div class="v num">${val!=null?(loqText(n,ms[k],i.code)||fmt(val,i.dec)):"–"} ${c==="up"?`<span style="color:${col("above")};font-size:11px">▲</span>`:c==="dn"?`<span style="color:${col("below")};font-size:11px">▼</span>`:""}</div></button>`;
+  }).join("");
+  document.querySelectorAll("#bnItems .c").forEach(x=>x.onclick=()=>{ S.item=x.dataset.it; renderHeader(); refresh(); });
+  $("bnHl").textContent = S.hl.has(n) ? "강조 해제" : "강조 추가";
+  $("bnProf").hidden = !RIVERS.includes(s.river);
+}
+
+/* ═════════ 연도별 색도 ═════════ */
+function renderYear(){
+  const cur = [...new Set(M.map(m=>+m.slice(0,4)))];
+  const years = [...new Set([...Object.values(D.yearly).flatMap(o=>Object.keys(o).map(Number)), ...cur])].sort();
+  const val = (n, y) => { if(cur.includes(y)){ const v = M.map((m,i)=>m.startsWith(y+"-")?D.values[n]?.["색도"]?.[i]:null); const s = stats(v); return s.n? +s.mean.toFixed(2) : null; } return D.yearly[n]?.[y] ?? null; };
+  let names = selectedOrdered().slice();
+  if(S.retired) Object.keys(D.yearly).forEach(n=>{ if(!stByName[n] && !names.includes(n)) names.push(n); });
+  const rows = names.map(n=>({name:n, values:years.map(y=>val(n,y))})).filter(r=>r.values.some(v=>v!=null));
+  const lastY = cur.at(-1), curMonths = M.filter(m=>m.startsWith(lastY+"-")), partial = curMonths.length<12;
+  const cats = years.map(y=> cur.includes(y) && partial && y===lastY ? `${y}*` : String(y));
+  $("yrSub").textContent = `${rows.length}개 지점`;
+  $("yrNote").hidden = !partial;
+  $("yrNote").innerHTML = partial ? `<b>${lastY}*</b>년 값은 ${+curMonths[0].slice(5)}~${+curMonths.at(-1).slice(5)}월(${curMonths.length}개월) 측정결과의 평균입니다. 강우기(6~9월) 비중이 커서 12개월 연평균보다 높게 나올 수 있으니, 연간 비교는 연말 자료가 모두 들어온 뒤에 하세요.` : "";
+  const plan = colorPlan(rows.map(r=>r.name));
+  legendHtml($("yrLegend"), rows.map(r=>r.name), plan);
+  const opt = trendOption({cats, rows, item:"색도", dec:1, unit:"도", plan});
+  if(partial){ const lim = opt.series.find(s=>s.name==="__limits") || (opt.series.push({name:"__limits",type:"line",data:[],silent:true}), opt.series.at(-1));
+    lim.markArea = {silent:true, itemStyle:{color:css("--warn-soft"), opacity:.7}, label:{show:true, position:"insideTop", color:css("--warn"), fontSize:11, formatter:"부분 연도"},
+      data:[[{xAxis:cats[cats.length-2]},{xAxis:cats[cats.length-1]}]]}; }
+  chartOn("yrChart").setOption(opt, true);
+  const t = targetOf("색도");
+  let h = `<thead><tr><th class="l stc">지점</th>${cats.map(c=>`<th>${c}</th>`).join("")}<th>평균</th>${t!=null?`<th class="l">최근 연도 목표(${t})</th>`:""}</tr></thead><tbody>`;
+  const tsv = [["지점",...cats,"평균"]];
+  for(const r of rows){ const s = stats(r.values), lastV = r.values.at(-1);
+    h += `<tr class="${S.hl.has(r.name)?"hl":""}"><td class="l stc" data-st="${esc(r.name)}"><span class="dot" style="background:${plan[r.name]?.color||col("base")}"></span>${esc(r.name)}${stByName[r.name]?"":' <span class="hint">(중단)</span>'}</td>${r.values.map(v=>{ if(v==null) return `<td></td>`; const c = cls(v,s); return `<td class="num ${c==="up"?"up":c==="dn"?"dn":""}">${fmt(v,1)}${c==="up"?'<span class="g">▲</span>':c==="dn"?'<span class="g">▼</span>':""}</td>`; }).join("")}
+      <td class="num stat"><b>${fmt(s.mean,1)}</b></td>${t!=null?`<td class="l">${lastV!=null?`<span class="pill ${lastV<=t?"ok":"ng"}">${lastV<=t?"달성":"미달성"}</span>${partial?' <span class="hint">부분</span>':""}`:""}</td>`:""}</tr>`;
+    tsv.push([r.name, ...r.values.map(v=>v??""), s.mean!=null?+s.mean.toFixed(2):""]); }
+  const tb = $("yrTbl"); tb.innerHTML = h + "</tbody>";
+  tb.querySelectorAll("td[data-st]").forEach(x=>{ if(stByName[x.dataset.st]) x.onclick=()=>toggleHl(x.dataset.st); });
+  $("yrTblSub").textContent = `단위 도 · ▲▼ ${bandText()||"판정 끔"} (지점의 연도 평균 기준)`;
+  cache.yrTsv = tsv;
+}
+
+/* ═════════ 자료 점검 ═════════ */
+function qcGroups(){
+  const names = new Set(selectedOrdered());
+  const list = D.qc.filter(q=>!S.qcSel || names.has(q.st));
+  const g = new Map();
+  for(const q of list){
+    if(q.type==="coord"){ if(!g.has("coord")) g.set("coord", {type:"coord", st:q.st, m:null, items:[], names:[], note:""}); g.get("coord").names.push(q.st); continue; }
+    const key = q.type==="repeat" ? `repeat|${q.st}|${q.m}` : q.type==="manual" ? `manual|${q.st}|${q.m}` : `${q.type}|${q.st}|${q.m}|${q.item}`;
+    if(!g.has(key)) g.set(key, {type:q.type, st:q.st, m:q.m, items:[], note:q.note, z:q.z});
+    if(q.item && !g.get(key).items.includes(q.item)) g.get(key).items.push(q.item);
+  }
+  const c = g.get("coord"); if(c) c.note = `주소 기반 추정 좌표: ${c.names.join(", ")} — 04 좌표 도구(V월드)로 보정하세요.`;
+  return [...g.values()].sort((a,b)=>(QC_RANK[a.type]??9)-(QC_RANK[b.type]??9) || String(b.m).localeCompare(String(a.m)) || (stByName[a.st]?.order??0)-(stByName[b.st]?.order??0));
+}
+function renderQc(){
+  const all = qcGroups(), cnt = {}; all.forEach(g=>cnt[g.type]=(cnt[g.type]||0)+1);
+  const types = ["outlier","manual","repeat","loq","multi","coord"].filter(t=>cnt[t]);
+  if(S.qcFilter!=="all" && !cnt[S.qcFilter]) S.qcFilter = "all";
+  $("qcSel").checked = S.qcSel;
+  $("qcSum").innerHTML = `<button class="chip ${S.qcFilter==="all"?"on":""}" data-t="all">전체<b>${all.length}</b></button>` +
+    types.map(t=>`<button class="chip ${S.qcFilter===t?"on":""}" data-t="${t}"><span class="t-${t}">●</span> ${QC_LABEL[t]}<b>${cnt[t]}</b></button>`).join("");
+  $("qcSum").querySelectorAll("button").forEach(b=>b.onclick=()=>{ S.qcFilter=b.dataset.t; refresh(); });
+  const rows = all.filter(g=>S.qcFilter==="all"||g.type===S.qcFilter);
+  $("qcSub").textContent = `${rows.length}건 · 자동 점검(이상값·전월 동일·정량한계·중복·좌표)과 엑셀 '검토표시' 입력`;
+  let h = `<thead><tr><th class="l">유형</th><th class="l">조사연월</th><th class="l stc">지점</th><th class="l">항목</th><th>값</th><th class="l">내용</th><th class="l"></th></tr></thead><tbody>`;
+  const tsv = [["유형","조사연월","지점","항목","값","내용"]];
+  for(const g of rows){
+    const mi = g.m ? M.indexOf(g.m) : -1;
+    const vals = g.items.map(c=>{ const v = mi>=0 ? D.values[g.st]?.[c]?.[mi] : null; return v==null?"":(loqText(g.st,g.m,c)||fmt(v,itemOf(c).dec)); });
+    h += `<tr><td class="l"><span class="t-${g.type}">●</span> ${QC_LABEL[g.type]}</td><td class="l num">${g.m||"-"}</td><td class="l stc" data-st="${esc(g.st)}">${g.type==="coord"?`${g.names.length}개 지점`:esc(g.st)}</td>
+      <td class="l">${esc(g.items.join(", ")||"-")}</td><td class="num">${esc(vals.join(" / "))}</td><td class="l wrap">${esc(g.note)}</td>
+      <td class="l"><button class="btn-s" data-go="${esc(g.st)}" data-it="${esc(g.items[0]||"")}" data-m="${g.m||""}" data-t="${g.type}">${g.type==="coord"?"지도":"보기"}</button></td></tr>`;
+    tsv.push([QC_LABEL[g.type], g.m||"", g.st, g.items.join(", "), vals.join(" / "), g.note]);
+  }
+  if(!rows.length) h += `<tr><td class="l" colspan="7" style="padding:20px">점검할 값이 없습니다.</td></tr>`;
+  const tb = $("qcTbl"); tb.innerHTML = h + "</tbody>";
+  tb.querySelectorAll("button[data-go]").forEach(b=>b.onclick=()=>{
+    const n = b.dataset.go; S.sel.add(n); S.hl.add(n);
+    if(b.dataset.it) S.item = b.dataset.it;
+    if(b.dataset.m){ const i = M.indexOf(b.dataset.m); if(i<S.from||i>S.to){ S.from=0; S.to=M.length-1; syncOpts(); } }
+    renderHeader();
+    if(b.dataset.t==="coord"){ setView("map"); setTimeout(()=>{ const s=stByName[n]; if(s.lat) map.setView([s.lat,s.lon], 13); openBanner(n); }, 80); }
+    else setView("ts");
+  });
+  tb.querySelectorAll("td[data-st]").forEach(x=>x.onclick=()=>toggleHl(x.dataset.st));
+  cache.qcTsv = tsv;
+}
+
+/* ═════════ 인쇄 보고서 ═════════ */
+function buildPrint(){
+  const names = selectedOrdered(), ms = months();
+  if(!names.length){ toast("선택된 지점이 없습니다."); return false; }
+  const theme = document.documentElement.dataset.theme; document.documentElement.dataset.theme = "light";
+  const plan = colorPlan(names);
+  const div = document.createElement("div"); div.style.cssText = "position:fixed;left:-10000px;top:0;width:1000px;height:360px"; document.body.appendChild(div);
+  const ch = echarts.init(div, null, {renderer:"canvas"});
+  let h = `<h1>${esc(D.title)} 보고서</h1><div class="meta">${mLong(ms[0])} ~ ${mLong(ms[ms.length-1])} · 지점 ${names.length}개${S.hl.size?` · 강조: ${[...S.hl].filter(n=>S.sel.has(n)).map(esc).join(", ")}`:""} · ▲▼ ${bandText()||"표시 안 함"} · 출력 ${new Date().toLocaleString("ko-KR")}</div>`;
+  for(const it of ITEMS){
+    const rows = rowsFor(names, it.code);
+    if(!rows.some(r=>r.values.some(v=>v!=null))) continue;
+    const opt = trendOption({cats:ms.map(mLabel), mkeys:ms, rows, item:it.code, dec:it.dec, unit:it.unit, plan});
+    opt.animation = false; opt.dataZoom = [];
+    ch.setOption(opt, true);
+    const img = ch.getDataURL({pixelRatio:2, backgroundColor:"#ffffff"});
+    const hasJ = !!((D.limits[it.code]||[]).length || targetOf(it.code)!=null);
+    const trs = rows.map(r=>{ const s = stats(r.values); if(!s.n) return ""; const nq = ms.filter(m=>qcAt(r.name,m,it.code).length).length;
+      return `<tr><td>${esc(r.name)}</td><td>${fmt(s.mean,it.dec)}</td><td>${fmt(s.max,it.dec)}</td><td>${fmt(s.min,it.dec)}</td><td>${fmt(s.sd,it.dec)}</td>${hasJ?`<td>${judge(it.code,s.mean).text}</td>`:""}<td>${nq||""}</td></tr>`; }).join("");
+    h += `<section><h2>${esc(it.name)} (${it.unit})</h2><img src="${img}" alt="${esc(it.name)} 그래프">
+      <table><thead><tr><th>지점</th><th>평균</th><th>최대</th><th>최소</th><th>표준편차</th>${hasJ?"<th>판정</th>":""}<th>점검</th></tr></thead><tbody>${trs}</tbody></table></section>`;
+  }
+  if(theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
+  ch.dispose(); div.remove();
+  $("print").innerHTML = h;
+  return true;
+}
+
+/* ═════════ 공통 갱신 ═════════ */
+function syncOpts(){
+  $("oBand").value=S.opt.band; $("oK").value=S.opt.k; $("oP").value=S.opt.p; $("oKwrap").hidden=S.opt.band!=="sd"; $("oPwrap").hidden=S.opt.band!=="pct";
+  $("oLabels").value=S.opt.labels; $("oMean").checked=S.opt.mean; $("oLimits").checked=S.opt.limits; $("oScale").value=S.opt.scale; $("oGaps").checked=S.opt.gaps;
+  $("oFrom").value=S.from; $("oTo").value=S.to;
+}
+function refresh(){
+  persist();
+  $("app").style.setProperty("--hdr", $("hdr").offsetHeight+"px");
+  ["ts","prof","heat","map","year","qc"].forEach(v=>$("v-"+v).hidden = v!==S.view);
+  $("itemSeg").style.visibility = (S.view==="year"||S.view==="qc") ? "hidden" : "visible";
+  $("kpis").hidden = S.view==="year" || S.view==="qc";
+  renderSide(); if(!$("kpis").hidden) renderKpis();
+  ({ts:renderTs, prof:renderProf, heat:renderHeat, map:renderMap, year:renderYear, qc:renderQc})[S.view]();
+}
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),1900); }
+const tsvText = rows => rows.map(r=>r.join("\t")).join("\n");
+async function copyText(t){ try{ await navigator.clipboard.writeText(t); toast("복사했습니다. 엑셀에 붙여넣기 하세요."); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); toast("복사했습니다."); }catch(_){ toast("복사가 막혀 있습니다. 표를 직접 선택해 복사하세요."); } ta.remove(); } }
+function saveFile(name, href){ try{ const a=document.createElement("a"); a.href=href; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(),500); }catch(e){ toast("이 환경에서는 저장할 수 없습니다."); } }
+
+function bind(){
+  $("selAll").onclick=()=>{ S.sel=new Set(ST.map(s=>s.name)); refresh(); };
+  $("selNone").onclick=()=>{ S.sel=new Set(); refresh(); };
+  $("hlNone").onclick=()=>{ S.hl=new Set(); refresh(); };
+  $("q").oninput=e=>{ S.q=e.target.value; renderSide(); };
+  $("menuBtn").onclick=()=>{ const s=$("side"); s.classList.toggle("collapsed"); $("menuBtn").setAttribute("aria-expanded", !s.classList.contains("collapsed")); };
+  const mo = M.map((m,i)=>`<option value="${i}">${multiYear?m:mLabel(m)}</option>`).join("");
+  $("oFrom").innerHTML=mo; $("oTo").innerHTML=mo; syncOpts();
+  $("oBand").onchange=e=>{ S.opt.band=e.target.value; syncOpts(); refresh(); };
+  $("oK").onchange=e=>{ const v=+e.target.value; if(v>0){ S.opt.k=v; refresh(); } };
+  $("oP").onchange=e=>{ const v=+e.target.value; if(v>0){ S.opt.p=v; refresh(); } };
+  $("oLabels").onchange=e=>{ S.opt.labels=e.target.value; refresh(); };
+  $("oMean").onchange=e=>{ S.opt.mean=e.target.checked; refresh(); };
+  $("oLimits").onchange=e=>{ S.opt.limits=e.target.checked; refresh(); };
+  $("oScale").onchange=e=>{ S.opt.scale=e.target.value; refresh(); };
+  $("oGaps").onchange=e=>{ S.opt.gaps=e.target.checked; refresh(); };
+  $("oFrom").onchange=e=>{ S.from=+e.target.value; if(S.to<S.from) S.to=S.from; syncOpts(); refresh(); };
+  $("oTo").onchange=e=>{ S.to=+e.target.value; if(S.from>S.to) S.from=S.to; syncOpts(); refresh(); };
+  const setC = () => { $("cAbove").value=toHex(col("above")); $("cBelow").value=toHex(col("below")); $("cBase").value=toHex(col("base")); };
+  setC();
+  [["cAbove","above"],["cBelow","below"],["cBase","base"]].forEach(([id,k])=>$(id).onchange=e=>{ S.colors[k]=e.target.value; refresh(); });
+  $("cReset").onclick=()=>{ S.colors={}; S.custom={}; setC(); refresh(); toast("색상을 기본값으로 되돌렸습니다"); };
+  $("resetAll").onclick=()=>{ store.clear(); const d = defaults(); Object.assign(S, d, {sel:new Set(d.sel), hl:new Set(d.hl), profHidden:new Set()}); syncOpts(); setC(); renderHeader(); refresh(); toast("처음 화면으로 돌아갔습니다"); };
+  document.querySelectorAll("#hmMode button").forEach(b=>b.onclick=()=>{ S.heatMode=b.dataset.m; refresh(); });
+  $("mpMonth").onchange=e=>{ S.mapMonth=e.target.value; renderMap(); };
+  $("mpLabels").onchange=e=>{ S.mapLabels=e.target.checked; persist(); renderMap(); };
+  $("mpNet").onchange=e=>{ S.mapNet=e.target.checked; persist(); renderMap(); };
+  $("mpLines").onchange=e=>{ S.mapLines=e.target.checked; persist(); renderMap(); };
+  $("bnClose").onclick=()=>{ $("banner").classList.add("closed"); $("banner").setAttribute("aria-hidden","true"); bannerSt=null; };
+  $("bnGo").onclick=()=>{ const n=bannerSt; S.sel.add(n); S.hl.add(n); setView("ts"); };
+  $("bnProf").onclick=()=>{ const n=bannerSt; S.profRiver=stByName[n].river; S.hl.add(n); S.sel.add(n); setView("prof"); };
+  $("bnHl").onclick=()=>{ toggleHl(bannerSt); };
+  $("yrRetired").onchange=e=>{ S.retired=e.target.checked; renderYear(); };
+  $("qcSel").onchange=e=>{ S.qcSel=e.target.checked; refresh(); };
+  $("tblCopy").onclick=()=>copyText(tsvText(cache.tsv||[]));
+  $("tblCsv").onclick=()=>{ const csv = (cache.tsv||[]).map(r=>r.map(c=>/[",\n]/.test(String(c))?`"${String(c).replace(/"/g,'""')}"`:c).join(",")).join("\n");
+    saveFile(`한탄강_${cache.fname||"data"}.csv`, URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}))); };
+  $("pfCopy").onclick=()=>copyText(tsvText(cache.pfTsv||[]));
+  $("yrCopy").onclick=()=>copyText(tsvText(cache.yrTsv||[]));
+  $("qcCopy").onclick=()=>copyText(tsvText(cache.qcTsv||[]));
+  document.querySelectorAll("[data-img]").forEach(b=>b.onclick=()=>{ const c = charts[b.dataset.img]; if(!c) return;
+    saveFile(`한탄강_${S.item}_${b.dataset.img==="pfChart"?S.profRiver+"_종단":"시계열"}.png`, c.getDataURL({pixelRatio:2, backgroundColor:css("--panel")})); });
+  $("printBtn").onclick=()=>{ if(buildPrint()) setTimeout(()=>{ try{ window.print(); }catch(e){ toast("이 환경에서는 인쇄할 수 없습니다."); } }, 100); };
+  addEventListener("afterprint", ()=>{ $("print").innerHTML=""; });
+  const rerender = ()=>{ setC(); tileStat.key=""; refresh(); };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender);
+  new MutationObserver(rerender).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+  addEventListener("resize", ()=>$("app").style.setProperty("--hdr", $("hdr").offsetHeight+"px"));
+  if(matchMedia("(min-width:981px)").matches) $("side").classList.remove("collapsed");
+}
+
+renderHeader(); bind(); refresh();
+</script>
