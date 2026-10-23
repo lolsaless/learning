@@ -1,0 +1,13 @@
+{
+  "name": "gcms-autotune-viewer",
+  "version": "1.0.0",
+  "description": "Agilent GC/MS Autotune 리포트(PDF/이미지) OCR 판독·평가 HTML 도구 빌드 키트",
+  "private": true,
+  "scripts": { "build": "node build.js" },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "pdfjs-dist": "^3.11.174",
+    "tesseract.js": "^5.1.1",
+    "tesseract.js-core": "^5.1.1"
+  }
+}
