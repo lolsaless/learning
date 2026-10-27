@@ -1,0 +1,16 @@
+/* [01_디자인/04_상세패널.css] 오른쪽 상세 패널 기본 틀, 작은 표(mini) */
+.detail { width: 460px; flex: none; border-left: 1px solid var(--line-strong); background: #fbfcfe; display: flex; flex-direction: column; min-height: 0; }
+.detail-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: flex-start; background: #fff; }
+.detail-head h3 { margin: 0; font-size: 14px; line-height: 1.45; flex: 1; }
+.detail-body { padding: 12px 14px; overflow: auto; flex: 1; }
+.detail-foot { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 8px; background: #fff; }
+.detail dl { display: grid; grid-template-columns: 88px 1fr; gap: 4px 10px; margin: 0 0 12px; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; word-break: break-all; }
+.detail h4 { margin: 16px 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
+.detail .warnlist { margin: 0 0 8px; padding: 8px 10px 8px 26px; background: var(--warn-soft); color: var(--warn); border-radius: 5px; }
+.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini th, .mini td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; white-space: normal; max-width: none; position: static; background: #fff; }
+.mini th { background: var(--th); font-weight: 600; cursor: default; }
+.paras p { margin: 0 0 6px; line-height: 1.6; }
+.paras mark { background: #ffe58a; padding: 0 1px; }

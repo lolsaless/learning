@@ -1,0 +1,13 @@
+/* [01_디자인/01_색상_기본글꼴.css] 색상 변수(--accent 등)·글꼴·바탕 */
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --line: #dfe4ec; --line-strong: #c9d1dd;
+  --text: #1d2633; --muted: #667085; --head: #1f2b3a; --head-text: #f2f5f9;
+  --accent: #1f5fae; --accent-soft: #e6eefa; --ok: #2e7d4f; --ok-soft: #e7f4ec;
+  --warn: #8a5a00; --warn-soft: #fff4cc; --err: #b42318; --err-soft: #fdecea; --dup-soft: #f0f1f3;
+  --th: #eef2f7; --sel: #fff9e6;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; font-size: 13px; color: var(--text); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+[hidden] { display: none !important; }

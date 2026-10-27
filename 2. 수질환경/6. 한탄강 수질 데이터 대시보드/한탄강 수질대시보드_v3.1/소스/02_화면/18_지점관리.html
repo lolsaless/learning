@@ -1,0 +1,23 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/18_지점관리.html] 지점 관리(주소·좌표 수정) 화면
+   하는 일 : 지점 관리(주소·좌표 수정) 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/18_지점관리.js
+   주요 이름: v-edit, edTbl, edSave, edMode
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-edit" hidden>
+      <div class="card">
+        <div class="card-h"><h3>지점 관리</h3><span class="sub">하천명(대분류)·주소·좌표·비고를 바로 고칩니다. 시료번호 이름은 측정결과와 연결되어 있어 여기서 바꾸지 않습니다.</span></div>
+        <div class="editbar">
+          <span class="mode" id="edMode"></span>
+          <input class="search" id="edQ" type="search" placeholder="하천·시료번호·주소 검색" style="width:220px">
+          <span style="flex:1"></span>
+          <button class="iconbtn" id="edUndo">변경 취소</button>
+          <button class="iconbtn" id="edCopy" title="엑셀 지점정보 시트에 그대로 붙여넣을 수 있는 표">표 복사(지점정보 붙여넣기용)</button>
+          <button class="btn" id="edSave">변경 저장</button>
+        </div>
+        <div class="notice" id="edMsg" hidden></div>
+        <div class="tablewrap" style="max-height:none"><table class="dt edit" id="edTbl"></table></div>
+        <datalist id="riverList"></datalist>
+        <div class="foot"><span><b>지도</b>: 지도를 눌러 위치 지정(좌표상태 '확인') · <b>V월드</b>: 주소·다리 이름으로 좌표 후보 검색(서버 실행 필요) · 고친 칸은 노란색으로 표시</span></div>
+      </div>
+    </section>

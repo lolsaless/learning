@@ -1,0 +1,31 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/07_지점관리_설정.css] 지점 관리 편집 표·설정 화면
+   하는 일 : 지점 관리 편집 표·설정 화면(설정 묶음·칸·키 입력줄)
+   주요 이름: .editbar, .dt.edit, .picking
+   이럴 때 고침: 편집 표·설정 화면 모양
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.editbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 16px 10px}
+.editbar .mode{font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--line)}
+.editbar .mode.on{color:#1d8a4a;border-color:#1d8a4a}
+.editbar .mode.off{color:var(--warn);border-color:var(--warn)}
+.dt.edit td{padding:3px 4px}
+.dt.edit input,.dt.edit select{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:3px 6px;font-size:12.5px;min-width:0}
+.dt.edit input.num{font-family:var(--f-num);text-align:right}
+.dt.edit td.dirty input,.dt.edit td.dirty select{background:var(--warn-soft);border-color:var(--warn)}
+.dt.edit tr.sub td{background:var(--panel-2);white-space:normal}
+.dt.edit .hits{display:flex;flex-wrap:wrap;gap:6px}
+.picking .leaflet-container{cursor:crosshair}
+/* 설정 화면 */
+.setform{display:flex;flex-direction:column;gap:14px;padding:4px 16px 8px}
+.setgrp h4{margin:6px 0 2px;font-size:14px}
+.setrows{display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;margin-top:6px}
+.setrow{display:grid;grid-template-columns:170px minmax(0,320px) minmax(0,1fr);gap:4px 14px;align-items:center;padding:8px 12px;border-top:1px solid var(--line-2)}
+.setrow:first-child{border-top:0}
+.setrow.dirty{background:var(--warn-soft)}
+.setrow .sk{font-weight:600;font-size:13px}
+.setrow .sd{font-size:12px;color:var(--ink-3)}
+.setrow input,.setrow select{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:5px 8px;font-size:13px}
+.setrow .keyrow{display:flex;gap:6px;align-items:center}
+.setrow .keyrow input{flex:1;font-family:var(--f-num)}
+.setrow .btn-s{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--ink-2);white-space:nowrap}
+@media (max-width:760px){ .setrow{grid-template-columns:1fr} }

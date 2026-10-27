@@ -1,0 +1,21 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/19_설정.html] 설정 화면
+   하는 일 : 설정 화면의 자리(저장 방식 표시·버튼·설정 칸). 칸 목록은 40_화면/20_설정.js 가 DB 설정 시트를 보고 만든다
+   주요 이름: v-set, stMode, stForm, stSave, stUndo, stLocalClear
+   이럴 때 고침: 설정 화면 안내 문구·버튼
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-set" hidden>
+      <div class="card">
+        <div class="card-h"><h3>설정</h3><span class="sub">V월드 인증키와 화면 기본값, 자료 점검 기준을 바꿉니다. 저장하면 DB 엑셀 '설정' 시트에 기록됩니다.</span></div>
+        <div class="editbar">
+          <span class="mode" id="stMode"></span>
+          <span style="flex:1"></span>
+          <button class="iconbtn" id="stLocalClear" hidden title="이 브라우저에 임시로 넣은 설정값을 지우고 DB 값으로 되돌림">이 브라우저 임시값 지우기</button>
+          <button class="iconbtn" id="stUndo">변경 취소</button>
+          <button class="btn" id="stSave">설정 저장</button>
+        </div>
+        <div class="notice" id="stMsg" hidden></div>
+        <div id="stForm" class="setform"></div>
+        <div class="foot"><span>V월드 인증키는 HTML 안에 들어갑니다. 기관 밖으로 보낼 때는 '공유용 HTML 만들기'(키 제외)를 쓰세요.</span></div>
+      </div>
+    </section>

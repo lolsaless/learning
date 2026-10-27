@@ -1,0 +1,63 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [00_틀/02_상단_사이드패널.html] 화면 틀(상단·왼쪽 패널)
+   하는 일 : 상단(제목·항목 버튼·화면 탭 자리·인쇄), 왼쪽 패널(하천·시료번호 목록, 표시 옵션, 색상), 요약 카드 자리, 화면들이 들어갈 <main> 시작
+   주요 이름: hdr, itemSeg, tabs, printBtn, side, stlist, oBand~oSpikeZ, cAbove~cSpike, kpis
+   이럴 때 고침: 왼쪽 패널에 옵션·버튼을 새로 넣을 때(기능은 90_시작/02_이벤트_연결.js에서 연결). 탭은 여기서 만들지 않음
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<div class="app" id="app">
+  <header class="top" id="hdr">
+    <div class="brand">
+      <h1 id="ttl">한탄강 수계 수질 대시보드<span class="ver" id="ver"></span></h1>
+      <small id="meta"></small>
+    </div>
+    <div class="seg items" id="itemSeg" role="group" aria-label="분석항목"></div>
+    <nav class="tabs" role="tablist" aria-label="화면" id="tabs"><!-- 탭 버튼은 각 화면 부품의 registerView()로 자동 생성 --></nav>
+    <div class="hbtns">
+      <button class="iconbtn" id="printBtn" title="선택한 지점·기간으로 7개 항목 보고서를 인쇄하거나 PDF로 저장">인쇄·PDF</button>
+      <button class="iconbtn menu-toggle" id="menuBtn" aria-expanded="false">지점·옵션 ▾</button>
+    </div>
+  </header>
+
+  <aside class="side collapsed" id="side">
+    <section class="collapsible stack">
+      <div class="row" style="justify-content:space-between"><h2>하천 · 시료번호</h2><span class="hint" id="selCount"></span></div>
+      <div class="row">
+        <button class="chip" id="selAll">전체 선택</button>
+        <button class="chip" id="selNone">선택 해제</button>
+        <button class="chip" id="hlNone">강조 해제</button>
+        <button class="chip" id="reColor" title="지금 선택한 시료번호의 색을 무작위로 다시 배정">🎲 색 다시 배정</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="하천·시료번호 검색" aria-label="시료번호 검색">
+      <p class="hint"><b>하천명</b>을 누르면 그 하천만 보기(시료번호마다 다른 색) · ☆ 강조 · ● 색 직접 지정(오른쪽 클릭: 자동색) · ⚡ 특이 경향</p>
+      <div class="stlist" id="stlist"></div>
+    </section>
+    <section class="collapsible opt">
+      <h2>표시</h2>
+      <label>▲▼ 판정
+        <select id="oBand"><option value="sd">평균 ± k·표준편차 밖</option><option value="pct">평균 ± p% 밖</option><option value="all">평균과 다르면 모두</option><option value="off">표시 안 함</option></select></label>
+      <label class="sub" id="oKwrap">k = <input type="number" id="oK" min="0.25" max="4" step="0.25"> <span>(1 = 약 68% 범위)</span></label>
+      <label class="sub" id="oPwrap" hidden>p = <input type="number" id="oP" min="5" max="300" step="5"> %</label>
+      <label>값 라벨 <select id="oLabels"><option value="auto">자동(▲▼·최근값)</option><option value="all">모든 점</option><option value="off">끄기</option></select></label>
+      <label><input type="checkbox" id="oMean"> 평균선과 정상 범위 띠</label>
+      <label><input type="checkbox" id="oLimits"> 기준선(생활환경기준·목표)</label>
+      <label>y축 <select id="oScale"><option value="linear">선형</option><option value="clip">이상치 잘라 보기</option><option value="log">로그</option></select></label>
+      <label><input type="checkbox" id="oGaps"> 측정 안 한 달도 선으로 잇기</label>
+      <label><input type="checkbox" id="oSpike"> ⚡ 특이 경향(급변) 선 강조</label>
+      <label class="sub" id="oSpikeWrap">기준 z ≥ <input type="number" id="oSpikeZ" min="3" max="30" step="1"> <span>(지점 중앙값 대비, 클수록 엄격)</span></label>
+      <label>기간 <select id="oFrom"></select> ~ <select id="oTo"></select></label>
+    </section>
+    <section class="collapsible stack">
+      <h2>색상</h2>
+      <div class="colors">
+        <input type="color" id="cAbove"><span>평균보다 높음 ▲</span>
+        <input type="color" id="cBelow"><span>평균보다 낮음 ▼</span>
+        <input type="color" id="cBase"><span>기본 선(지점이 많을 때 강조 안 한 지점)</span>
+        <input type="color" id="cSpike"><span>⚡ 특이 경향 선</span>
+      </div>
+      <div class="row"><button class="chip" id="cReset">색상 초기화</button><button class="chip" id="resetAll">처음 화면으로</button></div>
+      <p class="hint">선택·색상·옵션은 이 브라우저에 저장됩니다. '처음 화면으로'는 저장된 설정을 지우고 DB 설정값으로 돌아갑니다.</p>
+    </section>
+  </aside>
+
+  <main>
+    <div class="kpis" id="kpis"></div>

@@ -1,0 +1,31 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/14_지도.html] 지도 화면(배경지도 버튼·범례·그래프 배너)
+   하는 일 : 지도 화면(배경지도 버튼·범례·그래프 배너)의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/14_지도.js
+   주요 이름: v-map, map, mpBase, mpMsg, mpLegend, banner, bn*
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-map" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="mpTitle"></h3><span class="sub">지점을 누르면 그래프 배너가 열립니다.</span>
+          <div class="tools">
+            <label class="hint" style="display:flex;align-items:center;gap:6px">기준 <select id="mpMonth" class="search" style="width:auto;padding:4px 8px"></select></label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLabels"> 값 표시</label>
+            <label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="mpLines"> 지점 연결선</label>
+          </div></div>
+        <div class="mapwrap">
+          <div id="map"></div>
+          <div class="mapctl"><div class="seg sm" id="mpBase"></div><div class="mapmsg" id="mpMsg" hidden></div></div>
+          <div class="maplegend" id="mpLegend"></div>
+          <div class="banner closed" id="banner" aria-hidden="true">
+            <div class="bh"><div style="min-width:0"><h4 id="bnName"></h4><p id="bnSub"></p></div>
+              <button class="iconbtn x" id="bnClose" aria-label="닫기">✕</button></div>
+            <div class="bb">
+              <div id="bnWarn" class="stack" style="gap:4px"></div>
+              <div class="mini" id="bnChart"></div>
+              <div class="itemgrid" id="bnItems"></div>
+              <div class="btnrow"><button class="btn" id="bnGo">시계열에서 보기</button><button class="btn ghost" id="bnProf">종단에서 보기</button><button class="btn ghost" id="bnHl">강조 추가</button><button class="btn ghost" id="bnEdit">정보 수정</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

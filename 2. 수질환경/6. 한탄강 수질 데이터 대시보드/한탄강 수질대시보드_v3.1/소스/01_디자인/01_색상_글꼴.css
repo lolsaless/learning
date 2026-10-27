@@ -1,0 +1,47 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/01_색상_글꼴.css] 색상 변수·글꼴·기본 바탕(라이트·다크)
+   하는 일 : 색상 변수·글꼴·기본 바탕(라이트·다크)
+   주요 이름: --accent, --s1~--s8, --t1~--t8, --above, --below, --spike, --f-ui
+   이럴 때 고침: 색·글꼴을 바꿀 때(다크 모드 값도 함께)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root{
+  --bg:#eef2f1; --panel:#ffffff; --panel-2:#f6f8f8; --ink:#13201f; --ink-2:#47595a; --ink-3:#7a8a8a;
+  --line:#d9e1e0; --line-2:#e8edec; --accent:#0c666b; --accent-ink:#ffffff; --accent-soft:#dcecea;
+  --warn:#9a6a00; --warn-soft:#fff3d6; --focus:#1b8a8f; --qc-out:#b4235a; --qc-out-soft:#fbe4ee;
+  --above:#d6452f; --below:#2a6bc9; --base:#9aaba9;
+  --t1:#174a8b; --t2:#a9441c; --t3:#0e6e4c; --t4:#8a5d00; --t5:#b4426f; --t6:#4f7f00; --t7:#7f72d6; --t8:#9c2b2a; --spike:#c0187a;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --q100:#cde2fb; --q250:#86b6ef; --q400:#3987e5; --q550:#1c5cab; --q700:#0d366b; --mid:#f0efec; --r400:#e34948; --r600:#a42727;
+  --map-fill:#e3ebe9; --map-focus:#d3e2df; --map-stroke:#8fa6a2;
+  /* 글꼴: 행정망에서 외부 글꼴을 받을 수 없으므로 PC에 깔린 글꼴만 씀(Windows 맑은 고딕, Mac 애플 SD 산돌고딕) */
+  --f-ui:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --f-num:Consolas,"SF Mono",Menlo,ui-monospace,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc; --qc-out:#f07aa8; --qc-out-soft:#3a1a27;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --t1:#86b6ef; --t2:#f39a74; --t3:#5fd3a6; --t4:#f2c35a; --t5:#f0a3c1; --t6:#8fcf6f; --t7:#b9b1f3; --t8:#f19b9b; --spike:#f06bb5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#4a5d59;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --panel:#151d1c; --panel-2:#1a2423; --ink:#e7eeed; --ink-2:#a6b6b4; --ink-3:#71807e;
+  --line:#26312f; --line-2:#1f2928; --accent:#4cb0ad; --accent-ink:#06201f; --accent-soft:#183331;
+  --warn:#e8b54a; --warn-soft:#3a2f12; --focus:#6fd0cc; --qc-out:#f07aa8; --qc-out-soft:#3a1a27;
+  --above:#ec6a52; --below:#5b97ea; --base:#4f5f5d;
+  --t1:#86b6ef; --t2:#f39a74; --t3:#5fd3a6; --t4:#f2c35a; --t5:#f0a3c1; --t6:#8fcf6f; --t7:#b9b1f3; --t8:#f19b9b; --spike:#f06bb5;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  --q100:#16304f; --q250:#184f95; --q400:#2a78d6; --q550:#6da7ec; --q700:#cde2fb; --mid:#383835; --r400:#d95254; --r600:#f08a8a;
+  --map-fill:#18211f; --map-focus:#1f2b29; --map-stroke:#4a5d59;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}

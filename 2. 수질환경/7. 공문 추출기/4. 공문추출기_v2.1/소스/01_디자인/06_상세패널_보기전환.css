@@ -1,0 +1,21 @@
+/* [01_디자인/06_상세패널_보기전환.css] [추출 결과][원본 보기][나란히] 전환, 원본 보기 영역 */
+/* v1.1 상세 패널: 추출 결과 / 원본 보기 / 나란히 */
+.detail.mode-ext { width: 460px; }
+.detail.mode-org { width: min(860px, 62vw); }
+.detail.mode-side { width: min(1150px, 64vw); }
+.detail-head { align-items: center; }
+.detail-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; flex: none; }
+.seg-btn { border: none; background: #fff; padding: 4px 10px; cursor: pointer; font-size: 12px; border-right: 1px solid var(--line); }
+.seg-btn:last-child { border-right: none; }
+.seg-btn.on { background: var(--accent); color: #fff; font-weight: 600; }
+.detail-body { padding: 0; display: flex; min-height: 0; overflow: hidden; }
+.pane { overflow: auto; min-height: 0; }
+.pane-ext { padding: 12px 14px; flex: 1; }
+.mode-side .pane-ext { flex: 0 0 36%; min-width: 300px; border-right: 1px solid var(--line-strong); }
+.pane-org { flex: 1; display: flex; flex-direction: column; background: #80868f; }
+.pv-tools { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f3f5f8; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+.pv-tools .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 12px; }
+.pv { padding: 12px; flex: 1; }
+.pv .odt-page { box-shadow: 0 2px 10px rgba(0,0,0,.35); padding: .8cm 1cm; }
+.pv-msg { color: #fff; padding: 20px; }

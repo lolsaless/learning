@@ -1,0 +1,59 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/03_요약카드_표_범례.css] 요약 카드·카드 틀·범례·데이터 표·판정 꼬리표·점검 표시
+   하는 일 : 요약 카드·카드 틀·범례·데이터 표·판정 꼬리표·점검 표시
+   주요 이름: .kpi, .card, .legend, .dt, .pill, .q-outlier
+   이럴 때 고침: 표·카드·범례 모양, 점검 표시 색
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+main{padding:18px 22px 40px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:0}
+.kpi.click{cursor:pointer}
+.kpi.click:hover{border-color:var(--ink-3)}
+.kpi .k{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:21px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v small{font-size:12px;font-weight:400;color:var(--ink-3);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.warn{border-color:color-mix(in oklab,var(--warn) 45%,var(--line));background:color-mix(in oklab,var(--warn-soft) 55%,var(--panel))}
+.up{color:var(--above)} .dn{color:var(--below)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card+.card{margin-top:16px}
+.card-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:12px 16px 4px}
+.card-h h3{margin:0;font-size:15px;font-weight:600}
+.card-h .sub{color:var(--ink-3);font-size:12.5px}
+.card-h .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.notice{margin:6px 16px 0;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-size:12.5px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding:4px 16px 0;font-size:12.5px;color:var(--ink-2)}
+.legend .li{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-radius:4px;padding:1px 4px;border:0;background:transparent}
+.legend .li:hover{background:var(--panel-2)}
+.legend .li.off{opacity:.4}
+.legend .ln{width:16px;height:3px;border-radius:2px}
+.legend .muted{color:var(--ink-3);cursor:default}
+.legend .qk{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px}
+.chart{width:100%;height:440px}
+.tablewrap{overflow:auto;max-height:540px;border-top:1px solid var(--line)}
+table.dt{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+.dt th,.dt td{padding:5px 8px;border-bottom:1px solid var(--line-2);white-space:nowrap;text-align:right}
+.dt thead th{position:sticky;top:0;background:var(--panel-2);color:var(--ink-2);font-weight:600;z-index:2;border-bottom:1px solid var(--line)}
+.dt th.l,.dt td.l{text-align:left}
+.dt td.wrap{white-space:normal;min-width:240px}
+.dt td.stc{position:sticky;left:0;background:var(--panel);z-index:1;cursor:pointer;font-weight:500}
+.dt thead th.stc{position:sticky;left:0;z-index:3}
+.dt tr.hl td{background:color-mix(in oklab,var(--accent-soft) 60%,var(--panel))}
+.dt td .g{font-size:10px;margin-left:2px}
+.dt td.q-manual,.dt td.q-repeat{outline:1.5px dashed var(--warn);outline-offset:-3px;background:var(--warn-soft)}
+.dt td.q-outlier{outline:2px dotted var(--qc-out);outline-offset:-3px;background:var(--qc-out-soft)}
+.dt td.q-loq{font-style:italic}
+.dt td.stat{background:var(--panel-2);color:var(--ink)}
+.dt .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.dt .btn-s{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px;color:var(--ink-2)}
+.dt .btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.g0,.g1{color:#1d8a4a}.g2{color:#3b8f6a}.g3{color:#8a7a00}.g4{color:#c06a1a}.g5{color:#c2412d}.g6{color:#9b1c1c}
+.ok{color:#1d8a4a}.ng{color:#c2412d}
+.t-manual,.t-repeat{color:var(--warn)} .t-outlier{color:var(--qc-out)} .t-loq,.t-multi,.t-coord{color:var(--ink-2)}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px 16px 12px;font-size:12px;color:var(--ink-3)}
+.key{display:inline-block;width:14px;height:10px;vertical-align:middle;margin-right:4px}
+.key.k-rep{outline:1.5px dashed var(--warn);background:var(--warn-soft)}
+.key.k-out{outline:2px dotted var(--qc-out);background:var(--qc-out-soft)}
+.qcsum{display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 10px}
+.qcsum .chip b{margin-left:4px}

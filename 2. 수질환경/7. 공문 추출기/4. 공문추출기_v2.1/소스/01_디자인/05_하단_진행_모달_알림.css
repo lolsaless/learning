@@ -1,0 +1,22 @@
+/* [01_디자인/05_하단_진행_모달_알림.css] 하단 막대, 읽는 중 표시, 확인 창(모달), 알림(toast) */
+.bottombar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--panel); border-top: 1px solid var(--line-strong); flex: none; }
+.stats { color: var(--muted); white-space: nowrap; }
+.stats b { color: var(--text); }
+
+.busy { position: fixed; inset: 0; background: rgba(15,23,42,.28); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.busy-box { background: #fff; padding: 22px 30px; border-radius: 8px; display: flex; gap: 14px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+.spinner { width: 22px; height: 22px; border: 3px solid #d0d7e2; border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.modal { position: fixed; inset: 0; background: rgba(15,23,42,.35); display: flex; align-items: center; justify-content: center; z-index: 60; }
+.modal-box { background: #fff; border-radius: 8px; width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 64px); display: flex; flex-direction: column; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
+.modal-box h3 { margin: 0; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.modal-body { padding: 14px 18px; overflow: auto; line-height: 1.65; }
+.modal-body ul.flist { max-height: 240px; overflow: auto; background: #f7f9fc; border: 1px solid var(--line); border-radius: 5px; padding: 8px 8px 8px 26px; margin: 8px 0; }
+.modal-body .res-ok { color: var(--ok); }
+.modal-body .res-err { color: var(--err); }
+.modal-body h4 { margin: 14px 0 4px; }
+.modal-actions { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+
+.toast { position: fixed; right: 20px; bottom: 64px; max-width: 460px; background: #1f2b3a; color: #fff; padding: 10px 14px; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.25); z-index: 70; line-height: 1.5; }
+.toast.err { background: var(--err); }

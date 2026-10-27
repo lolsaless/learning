@@ -1,0 +1,14 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/13_히트맵.html] 히트맵 화면
+   하는 일 : 히트맵 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/13_히트맵.js
+   주요 이름: v-heat, hmChart, hmMode
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-heat" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="hmTitle"></h3><span class="sub" id="hmSub"></span>
+          <div class="tools"><div class="seg sm" id="hmMode"><button data-m="value">측정값</button><button data-m="dev">지점 평균 대비(%)</button></div></div></div>
+        <div class="chart" id="hmChart" style="height:auto"></div>
+        <div class="foot"><span>칸을 누르면 해당 지점을 강조하고 시계열로 이동합니다.</span><span><i class="key k-rep"></i>검토필요·전월 동일</span><span><i class="key k-out"></i>이상값 의심</span></div>
+      </div>
+    </section>

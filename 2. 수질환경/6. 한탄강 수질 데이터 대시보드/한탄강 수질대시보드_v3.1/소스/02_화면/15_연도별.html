@@ -1,0 +1,20 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/15_연도별.html] 연도별 색도 화면
+   하는 일 : 연도별 색도 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/15_연도별.js
+   주요 이름: v-year, yrChart, yrTbl
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-year" hidden>
+      <div class="card">
+        <div class="card-h"><h3>연도별 평균 색도</h3><span class="sub" id="yrSub"></span>
+          <div class="tools"><label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="yrRetired"> 현재 조사하지 않는 지점 포함</label></div></div>
+        <div class="notice" id="yrNote"></div>
+        <div class="legend" id="yrLegend"></div>
+        <div class="chart" id="yrChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>연도별 데이터</h3><span class="sub" id="yrTblSub"></span>
+          <div class="tools"><button class="iconbtn" id="yrCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="yrTbl"></table></div>
+      </div>
+    </section>

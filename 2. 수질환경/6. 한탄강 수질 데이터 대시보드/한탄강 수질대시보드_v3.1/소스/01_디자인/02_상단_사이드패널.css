@@ -1,0 +1,62 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/02_상단_사이드패널.css] 상단 막대·탭·왼쪽 패널(하천 묶음·시료번호 줄·옵션·색상)
+   하는 일 : 상단 막대·탭·왼쪽 패널(하천 묶음·시료번호 줄·옵션·색상)
+   주요 이름: .top, .tabs, .side, .rgrp, .rh, .st, .opt
+   이럴 때 고침: 상단·왼쪽 패널 모양
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.app{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100vh}
+header.top{grid-column:1/-1;position:sticky;top:env(safe-area-inset-top,0px);z-index:1000;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-inline:20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.brand h1 .ver{font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:0 6px;margin-left:6px;vertical-align:3px}
+.brand small{color:var(--ink-3);font-size:12px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;cursor:pointer;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg.sm button{padding:3px 10px;font-size:12.5px}
+.tabs{display:flex;gap:2px}
+.tabs button{border:0;background:transparent;padding:8px 11px;cursor:pointer;color:var(--ink-2);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:700;line-height:17px;text-align:center}
+.hbtns{display:flex;gap:6px}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink-2);white-space:nowrap}
+.iconbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+aside.side{background:var(--panel);border-right:1px solid var(--line);padding:14px 14px 30px;display:flex;flex-direction:column;gap:16px;
+  position:sticky;top:var(--hdr,64px);height:calc(100vh - var(--hdr,64px));overflow:auto}
+.side h2{margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--ink-3)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.chip:hover{border-color:var(--ink-3);color:var(--ink)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.search{width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 10px}
+.stlist{display:flex;flex-direction:column;gap:2px}
+.st{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:6px;padding:3px 4px 3px 18px;border-radius:6px}
+.st:hover{background:var(--panel-2)}
+.st label{cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st.hl label{font-weight:600}
+.st .note{font-size:10.5px;color:var(--warn);margin-left:4px}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;margin:0;cursor:pointer}
+.star{border:0;background:transparent;cursor:pointer;color:var(--ink-3);font-size:15px;line-height:1;padding:2px 3px;border-radius:4px}
+.star[aria-pressed="true"]{color:#e0a100}
+.sw{position:relative;width:18px;height:18px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;overflow:hidden;flex:none}
+.sw input{position:absolute;inset:-6px;opacity:0;cursor:pointer;width:30px;height:30px}
+.sw.custom{box-shadow:0 0 0 2px var(--ink-3)}
+.opt{display:flex;flex-direction:column;gap:9px;font-size:13px}
+.opt label{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap}
+.opt select,.opt input[type=number]{border:1px solid var(--line);background:var(--panel-2);border-radius:6px;padding:3px 6px}
+.opt input[type=number]{width:62px}
+.opt .sub{padding-left:2px;color:var(--ink-3);font-size:12px}
+.colors{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:13px}
+.colors input[type=color]{width:34px;height:22px;border:1px solid var(--line);border-radius:5px;padding:0;background:none;cursor:pointer}
+.hint{font-size:12px;color:var(--ink-3);margin:0}
+.rgrp{margin-top:4px;border-top:1px solid var(--line-2)}
+.rh{display:flex;align-items:center;gap:6px;padding:6px 4px 3px}
+.rname{border:0;background:transparent;padding:2px 6px;border-radius:6px;font-weight:600;font-size:13px;color:var(--ink);cursor:pointer}
+.rname:hover{background:var(--accent-soft);color:var(--accent)}
+.rh .n{font-size:11px;color:var(--ink-3)}
+.st .spk{font-size:11px;margin-left:3px;color:var(--qc-out)}
+.legend .spkchip{color:var(--qc-out);font-weight:600}

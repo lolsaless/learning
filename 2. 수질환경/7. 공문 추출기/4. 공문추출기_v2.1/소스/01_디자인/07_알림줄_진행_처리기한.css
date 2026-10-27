@@ -1,0 +1,23 @@
+/* [01_디자인/07_알림줄_진행_처리기한.css] 알림줄, 진행 꼬리표(시행 ✔ 성적서 n/n), 시료접수일 칸, 처리기한 색(임박·초과) */
+/* ───── v2.0 ───── */
+.banner { display: flex; align-items: center; gap: 10px; padding: 7px 16px; background: #eef4fc; border-bottom: 1px solid #cfdcef; flex: none; flex-wrap: wrap; }
+.banner .sep { width: 1px; height: 18px; background: #c3d1e6; margin: 0 6px; }
+.pill { display: inline-block; font-size: 11px; line-height: 1; padding: 3px 6px; border-radius: 10px; white-space: nowrap; border: 1px solid transparent; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); border-color: #b9dfc8; }
+.pill.part { background: var(--warn-soft); color: var(--warn); border-color: #f0d68a; }
+.pill.none { background: #f2f4f7; color: #98a2b3; }
+.recv-cell { cursor: pointer; border-bottom: 1px dashed #98a2b3; }
+.recv-cell:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.recv-cell.empty { color: var(--accent); }
+.recv-cell.est { color: #667085; }
+.recv-cell small { font-size: 10px; color: #98a2b3; margin-left: 2px; }
+.due b { font-weight: 600; margin-left: 2px; }
+.due sup { color: var(--warn); }
+.due.due-imm, .td-due-imm .due { color: var(--err); font-weight: 600; }
+td.td-due-over, tr td.td-due-over { background: #fbd5d1 !important; color: #8f1a10; font-weight: 600; }
+td.td-due-imm { color: var(--err); }
+.due.due-soon { color: #b54708; }
+td.td-due-soon { color: #b54708; }
+tr.is-ready td.c-chk { box-shadow: inset 3px 0 0 var(--ok); }
+.res-bad { color: var(--err); font-weight: 600; }
+.small { font-size: 12px; }

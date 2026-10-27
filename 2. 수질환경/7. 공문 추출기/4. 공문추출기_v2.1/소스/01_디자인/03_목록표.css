@@ -1,0 +1,31 @@
+/* [01_디자인/03_목록표.css] 가운데 목록 표, 행 색(완료·중복·오류·선택), 꼬리표 */
+.main { flex: 1; display: flex; min-height: 0; }
+.tablewrap { flex: 1; overflow: auto; position: relative; background: var(--panel); }
+.empty { padding: 48px 32px; color: var(--muted); max-width: 760px; line-height: 1.7; }
+.empty h2 { color: var(--text); font-size: 18px; margin: 0 0 12px; }
+.empty ol { padding-left: 20px; margin: 8px 0 20px; }
+.empty .btn { margin-right: 6px; }
+.notice { border: 1px solid #f3d27a; background: var(--warn-soft); color: var(--warn); border-radius: 6px; padding: 14px 16px; }
+
+table { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+thead th { position: sticky; top: 0; z-index: 5; background: var(--th); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line); padding: 7px 8px; text-align: left; font-weight: 600; white-space: nowrap; cursor: pointer; user-select: none; }
+thead th.sorted::after { content: attr(data-dir); color: var(--accent); margin-left: 4px; font-size: 10px; }
+thead th.c-chk, td.c-chk { position: sticky; left: 0; z-index: 4; text-align: center; width: 54px; min-width: 54px; }
+thead th.c-chk { z-index: 6; cursor: default; }
+td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); padding: 5px 8px; vertical-align: top; background: #fff; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.wrap { white-space: normal; }
+td.c-chk { background: #fbfcfd; }
+tr.grp-first td { border-top: 1px solid var(--line-strong); }
+tbody tr:hover td { background: #f6f9fd; }
+tr.is-checked td, tr.is-checked td.c-chk { background: var(--ok-soft); }
+tr.is-done td { color: #475467; }
+tr.is-dup td { background: var(--dup-soft); color: #8a94a6; }
+tr.is-err td { background: var(--err-soft); }
+tr.is-sel td { background: var(--sel) !important; }
+td.cell-warn { background: var(--warn-soft) !important; color: var(--warn); font-weight: 600; }
+td.c-warn { color: var(--warn); max-width: 360px; }
+td.c-warn.err { color: var(--err); }
+.badge { display: inline-block; font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); margin-left: 4px; vertical-align: 1px; }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--ok); }
+.muted { color: var(--muted); }

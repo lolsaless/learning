@@ -1,0 +1,15 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/17_자료점검.html] 자료 점검 화면
+   하는 일 : 자료 점검 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/17_자료점검.js
+   주요 이름: v-qc, qcSum, qcTbl
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-qc" hidden>
+      <div class="card">
+        <div class="card-h"><h3>자료 점검</h3><span class="sub" id="qcSub"></span>
+          <div class="tools"><label class="hint" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="qcSel"> 선택한 지점만</label><button class="iconbtn" id="qcCopy">목록 복사</button></div></div>
+        <div class="qcsum" id="qcSum"></div>
+        <div class="tablewrap" style="max-height:none"><table class="dt" id="qcTbl"></table></div>
+        <div class="foot"><span>자동 점검 기준은 DB '설정' 시트에서 바꿀 수 있습니다(이상값_기준·이상값_배율·전월동일_항목수). 확인한 값은 측정결과 시트에서 고친 뒤 대시보드를 다시 만드세요.</span></div>
+      </div>
+    </section>

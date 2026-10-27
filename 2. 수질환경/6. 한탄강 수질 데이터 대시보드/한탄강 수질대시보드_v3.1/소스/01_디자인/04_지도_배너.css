@@ -1,0 +1,39 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/04_지도_배너.css] 지도·값 라벨·지도 범례·그래프 배너
+   하는 일 : 지도·값 라벨·지도 범례·그래프 배너
+   주요 이름: .mapwrap, .vlab, .maplegend, .banner, .itemgrid
+   이럴 때 고침: 지도 위 표시 모양, 배너 크기
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* map */
+.mapwrap{position:relative;height:660px;border-top:1px solid var(--line);overflow:hidden;border-radius:0 0 var(--r) var(--r)}
+#map{position:absolute;inset:0;background:var(--panel-2)}
+.leaflet-container{font-family:var(--f-ui);background:var(--panel-2)}
+.vlab{background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:0 5px;font:500 11px/16px var(--f-num);border-radius:4px;white-space:nowrap;display:inline-block;transform:translate(10px,-8px);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.vlab.left{transform:translate(calc(-100% - 10px),-8px)}
+.vlab.over{color:var(--above);font-weight:700}
+.leaflet-tooltip.nm{background:var(--panel);color:var(--ink);border:1px solid var(--line);font-size:12px}
+.leaflet-control-attribution{font-size:10px}
+.mapctl{position:absolute;left:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 24px)}
+.mapctl .seg{background:var(--panel)}
+.mapmsg{background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:8px;padding:6px 10px;font-size:12px;max-width:380px}
+.maplegend{position:absolute;left:12px;bottom:12px;z-index:500;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;min-width:190px}
+.maplegend .bar{height:8px;border-radius:4px;margin:4px 0 2px}
+.maplegend .ends{display:flex;justify-content:space-between;color:var(--ink-3)}
+.maplegend .lg{display:flex;align-items:center;gap:6px;margin-top:4px;color:var(--ink-2)}
+.maplegend .cm{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink-2)}
+.maplegend .cm.est{border-style:dashed}
+.banner{position:absolute;right:12px;top:12px;bottom:12px;width:min(430px,calc(100% - 24px));z-index:600;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden;transition:transform .22s ease,opacity .22s ease}
+.banner.closed{transform:translateX(30px);opacity:0;pointer-events:none}
+.banner .bh{padding:12px 14px 8px;border-bottom:1px solid var(--line-2);display:flex;gap:10px;align-items:flex-start}
+.banner .bh h4{margin:0;font-size:16px}
+.banner .bh p{margin:2px 0 0;font-size:12px;color:var(--ink-3)}
+.banner .x{margin-left:auto}
+.banner .bb{overflow:auto;padding:8px 14px 14px;display:flex;flex-direction:column;gap:10px}
+.banner .mini{height:220px;width:100%;flex:none}
+.itemgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.itemgrid .c{border:1px solid var(--line-2);border-radius:8px;padding:6px 8px;cursor:pointer;background:var(--panel);text-align:left}
+.itemgrid .c:hover{border-color:var(--ink-3)}
+.itemgrid .c.on{border-color:var(--accent);background:var(--accent-soft)}
+.itemgrid .c .k{font-size:11px;color:var(--ink-3)}
+.itemgrid .c .v{font-size:14px;font-weight:600}

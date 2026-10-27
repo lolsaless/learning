@@ -1,0 +1,14 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/06_경향분석.css] 경향 분석 행렬·도구줄
+   하는 일 : 경향 분석 행렬·도구줄
+   주요 이름: .mtx, .anrow
+   이럴 때 고침: 분석 표 모양
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.mtx td.c{cursor:pointer;text-align:center;min-width:72px}
+.mtx td.c:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.mtx td.c.sel{outline:2px solid var(--ink);outline-offset:-2px}
+.mtx th.it{text-align:center}
+.mtx td.rv{color:var(--ink-3);font-size:11.5px}
+.anrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:6px 16px 0;font-size:12.5px;color:var(--ink-2)}
+.anrow select,.anrow input{border:1px solid var(--line);background:var(--panel-2);border-radius:6px;padding:3px 6px}
+.anrow input[type=number]{width:80px}

@@ -1,0 +1,6 @@
+/* [01_디자인/11_입력창_기타.css] 직접 입력 창, 기타 작은 조정 */
+.form { display: flex; flex-direction: column; gap: 6px; }
+.form h4 { margin: 10px 0 2px; }
+.mantext { width: 100%; min-height: 200px; font: 12px/1.5 Consolas, "D2Coding", monospace; border: 1px solid var(--line-strong); border-radius: 5px; padding: 8px; white-space: pre; tab-size: 18; }
+.modal-box .mini { margin: 6px 0; }
+.detail-foot .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50%; }

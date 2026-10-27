@@ -1,0 +1,22 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/16_경향분석.html] 경향 분석 화면
+   하는 일 : 경향 분석 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/16_경향분석.js
+   주요 이름: v-ana, anTabs, anChart, anTbl
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-ana" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="anTitle">경향 분석</h3><span class="sub" id="anSub"></span>
+          <div class="tools"><div class="seg sm" id="anTabs">
+            <button data-a="trend">추세 검정</button><button data-a="corr">항목 간 상관</button><button data-a="box">월별 분포</button><button data-a="exceed">기준 초과율</button></div></div></div>
+        <div class="notice" id="anNote"></div>
+        <div id="anTop"></div>
+        <div class="chart" id="anChart"></div>
+        <div class="foot" id="anFoot"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3 id="anTblTitle"></h3><span class="sub" id="anTblSub"></span>
+          <div class="tools"><button class="iconbtn" id="anCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="anTbl"></table></div>
+      </div>
+    </section>

@@ -1,0 +1,37 @@
+# 자주 하는 수정 → 고칠 부품.  한 줄에:  이런 수정 | 고칠 부품(소스/ 기준) | 찾을 이름
+# 빌드할 때 문서/부품지도.md 맨 위 표로 들어간다.
+색·글꼴(디자인 전체, 다크 모드 포함) | 01_디자인/01_색상_글꼴.css | --accent, --s1~--s8, --f-ui
+시료번호 선 색(16색 팔레트) | 01_디자인/01_색상_글꼴.css | --s1~--s8, --t1~--t8
+상단·왼쪽 패널 모양 | 01_디자인/02_상단_사이드패널.css | .top, .side, .rgrp, .st
+왼쪽 패널에 옵션·버튼 추가 | 00_틀/02_상단_사이드패널.html → 90_시작/02_이벤트_연결.js | id, bind
+화면(탭) 순서 바꾸기·화면 빼기 | 빌드목록.txt | 02_화면/*.html 과 40_화면/*.js 줄 순서
+탭 이름·요약 카드 표시 여부 | 40_화면/(해당 화면).js | registerView({label, kpi, item})
+새 화면(탭) 만들기 | 02_화면/새화면.html + 40_화면/새화면.js + 빌드목록.txt | registerView
+처음 열 때 기본 화면(항목·선택·옵션) | 20_공통/01_기본값_상태.js | defaults
+▲▼ 판정 규칙(평균±kσ 등) | 20_공통/02_통계_판정.js | band, cls
+생활환경기준 등급·목표 판정 방식 | 20_공통/02_통계_판정.js | grade, judge
+숫자 표기(소수 자리·천 단위) | 20_공통/02_통계_판정.js | fmt
+색 자동 배정·16색 규칙 | 20_공통/04_색상_특이경향.js | colorPlan, reassignColors
+⚡ 특이 경향 판정식 | 20_공통/04_색상_특이경향.js | spikeOf, planFor
+꺾은선 모양(굵기·점·라벨·평균선·기준선) | 20_공통/05_추이차트.js | trendOption
+그래프 툴팁·범례 글자 | 20_공통/05_추이차트.js | tooltipHtml, legendHtml
+요약 카드(KPI) 내용 | 30_틀동작/03_요약카드.js | renderKpis
+하천 목록·하천명 클릭 동작 | 30_틀동작/02_사이드패널.js | renderSide
+시계열 데이터 표 열·표시 | 40_화면/11_시계열.js | renderTable, cellHtml
+종단 그래프·구간 변화 기준(30%) | 40_화면/12_종단.js | renderProf
+히트맵 색·라벨 | 40_화면/13_히트맵.js | renderHeat
+V월드 배경지도 종류·주소 | 40_화면/14_지도.js | VW, setTiles
+지도 원 크기·색·값 라벨 | 40_화면/14_지도.js | renderMap, placeLabels
+지도 그래프 배너 내용 | 40_화면/14_지도.js | openBanner
+연도별 색도 화면 | 40_화면/15_연도별.js | renderYear
+통계 계산(Mann-Kendall·Sen·Spearman·사분위) | 40_화면/16_경향분석_통계.js | mannKendall, spearman, quart
+경향 분석 화면·설명 문구 | 40_화면/17_경향분석.js | anaTrend, anaCorr, anaBox, anaExceed
+자료 점검 목록 표시 | 40_화면/18_자료점검.js | qcGroups, renderQc
+지점 관리 편집 칸·저장 방식 | 40_화면/19_지점관리.js | renderEdit, saveEdits
+설정 화면 묶음·API 키 시험 | 40_화면/20_설정.js | SET_GROUPS, testVworldKey
+설정 값을 화면에서 쓰기(새 설정 추가) | 20_공통/00_설정값.js (+ tools/wq_common.py 의 SETTINGS) | buildCfg
+인쇄·PDF 보고서 구성 | 40_화면/21_인쇄.js | buildPrint
+인쇄 글꼴·여백 | 01_디자인/09_인쇄.css | @media print
+자동 점검 규칙(이상값·전월 동일) | tools/data_builder.py | build_data 의 '자료 점검(QC)'
+엑셀 DB 시트·열 이름, 설정 기본값 | tools/wq_common.py | ST_COLS, MEAS_COLS, SETTINGS
+서버 저장 규칙(지점·설정) | tools/serve.py | apply_station_edits, apply_settings

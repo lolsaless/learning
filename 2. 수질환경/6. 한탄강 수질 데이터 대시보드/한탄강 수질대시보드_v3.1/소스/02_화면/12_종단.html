@@ -1,0 +1,19 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/12_종단.html] 상·하류 종단 화면
+   하는 일 : 상·하류 종단 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/12_종단.js
+   주요 이름: v-prof, pfChart, pfRivers, pfTbl
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-prof" hidden>
+      <div class="card">
+        <div class="card-h"><h3 id="pfTitle"></h3><span class="sub" id="pfSub"></span>
+          <div class="tools"><div class="seg sm" id="pfRivers"></div><button class="iconbtn" data-img="pfChart">그림 저장</button></div></div>
+        <div class="legend" id="pfLegend"></div>
+        <div class="chart" id="pfChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>구간별 변화</h3><span class="sub">바로 위(상류) 지점과 비교한 기간 평균 변화 · ▲ 30% 이상 증가 구간</span>
+          <div class="tools"><button class="iconbtn" id="pfCopy">표 복사</button></div></div>
+        <div class="tablewrap"><table class="dt" id="pfTbl"></table></div>
+      </div>
+    </section>

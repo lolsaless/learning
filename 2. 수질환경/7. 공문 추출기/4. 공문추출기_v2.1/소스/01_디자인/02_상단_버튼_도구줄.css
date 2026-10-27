@@ -1,0 +1,31 @@
+/* [01_디자인/02_상단_버튼_도구줄.css] 상단 막대, 버튼 모양, 검색·필터 도구줄, 열 선택 창 */
+.topbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--head); color: var(--head-text); flex: none; }
+.brand { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; white-space: nowrap; }
+.brand .ver { font-weight: 400; font-size: 11px; opacity: .6; margin-left: 4px; }
+.folder { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.folder-label { font-size: 11px; opacity: .65; white-space: nowrap; }
+#folderName { background: rgba(255,255,255,.1); padding: 4px 10px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+.top-actions { display: flex; gap: 6px; }
+.topbar .btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.18); color: #fff; }
+.topbar .btn:hover:not(:disabled) { background: rgba(255,255,255,.22); }
+
+.btn { border: 1px solid var(--line-strong); background: var(--panel); padding: 6px 12px; border-radius: 5px; cursor: pointer; white-space: nowrap; line-height: 1.2; }
+.btn:hover:not(:disabled) { background: #f0f3f8; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.primary:hover:not(:disabled) { background: #194f92; }
+.btn.danger { background: var(--err); border-color: var(--err); color: #fff; }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 4px 9px; font-size: 12px; }
+.btn.link { border: none; background: none; color: var(--accent); padding: 2px 4px; text-decoration: underline; }
+
+.toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; }
+.toolbar input[type=search] { width: 300px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 5px; }
+.toolbar select { padding: 5px 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: #fff; }
+.chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+.spacer { flex: 1; }
+.colpick { position: relative; }
+.popover { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px rgba(16,24,40,.14); padding: 10px; z-index: 30; width: 360px; }
+.popover .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-bottom: 8px; }
+.popover .cols label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.popover .pop-actions { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }

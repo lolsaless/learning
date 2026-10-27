@@ -1,0 +1,33 @@
+/* [01_디자인/10_달력_설정창.css] 달력(날짜 선택·휴일), 설정 창 탭, 처리기간 표 */
+.datepop { position: fixed; z-index: 80; background: #fff; border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: 0 10px 30px rgba(16,24,40,.22); padding: 10px; width: 300px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-w { text-align: center; font-size: 11px; color: var(--muted); padding: 2px 0; }
+.cal-w.sun, .cal-d.sun, .cal-d.hol { color: #d92d20; }
+.cal-w.sat, .cal-d.sat { color: #1f5fae; }
+.cal-d { border: 1px solid transparent; background: #fff; border-radius: 5px; padding: 5px 0; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; align-items: center; min-height: 30px; }
+.cal-d:hover { background: #eef3fb; }
+.cal-d small { font-size: 9px; line-height: 1.1; color: inherit; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cal-d.other { opacity: .38; }
+.cal-d.hol { background: #fdecea; }
+.cal-d.cust { background: #fff0d6; color: #b54708; }
+.cal-d.work { background: #e7f4ec; color: var(--ok); }
+.cal-d.today { border-color: #98a2b3; }
+.cal-d.sel { background: var(--accent); color: #fff; font-weight: 700; }
+.cal-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; }
+.legend { color: var(--muted); }
+.lg { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 2px 0 6px; }
+.lg.hol { background: #fdecea; border: 1px solid #f5b8b2; } .lg.cust { background: #fff0d6; border: 1px solid #f3c77a; }
+.lg-t { padding: 0 4px; border-radius: 3px; } .lg-t.cust { background: #fff0d6; color: #b54708; } .lg-t.work { background: #e7f4ec; color: var(--ok); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.tab { border: 1px solid var(--line); border-bottom: none; background: #f7f8fa; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; }
+.tab.on { background: #fff; font-weight: 600; color: var(--accent); position: relative; top: 1px; }
+.hol-wrap { display: flex; gap: 18px; flex-wrap: wrap; }
+.hol-wrap .cal { width: 430px; }
+.hol-wrap .cal-d { min-height: 46px; font-size: 13px; }
+.hol-side { flex: 1; min-width: 220px; }
+.hol-side h4 { margin: 10px 0 4px; }
+.basis { background: #f7f9fc; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+.num { width: 64px; padding: 3px 5px; border: 1px solid var(--line-strong); border-radius: 4px; }
+tr.inuse td:first-child { font-weight: 700; }
+.opts { display: flex; flex-direction: column; gap: 10px; }

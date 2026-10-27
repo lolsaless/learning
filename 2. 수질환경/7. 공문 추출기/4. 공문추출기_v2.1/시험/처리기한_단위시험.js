@@ -1,0 +1,27 @@
+// 처리기한 계산 단위 시험 — 자료 파일 없이 실행. 사용: node 시험/처리기한_단위시험.js
+const { E, check, summary } = require('./공통.js');
+const hol = new Set([...Object.keys(E.HOLIDAYS_BUILTIN[2026]), ...Object.keys(E.HOLIDAYS_BUILTIN[2027])]);
+const T = E.stdDaysTable();
+const due = (d, it, opt = {}) => E.deadline(d, T[it].days, hol, opt);
+console.log('[별표 2] 처리기한 계산');
+check(due('2026-10-26', 'SS') === '2026-11-02', '월 접수 SS 5일 → 다음 주 월요일(접수일 제외)', due('2026-10-26', 'SS'));
+check(due('2026-10-26', 'SS', { countReceiptDay: true }) === '2026-10-30', '13시 이전 접수 → 접수일 포함, 금요일');
+check(due('2026-10-02', 'SS') === '2026-10-13', '10.02(금) SS → 대체공휴일·한글날 제외 10.13', due('2026-10-02', 'SS'));
+check(due('2026-10-24', 'SS') === '2026-10-30', '토요일 접수 SS → 10.30(금)');
+check(due('2026-09-23', 'T-P') === '2026-10-07', '추석 연휴 걸친 T-P 7일 → 10.07', due('2026-09-23', 'T-P'));
+check(due('2026-10-22', 'BOD') === '2026-11-04', 'BOD 9일 → 11.04');
+const items = ['BOD', 'SS', 'T-P'];
+check(E.sampleDeadline(items, '2026-10-26', hol, T).due === '2026-11-06', '여러 항목: 가장 긴 항목(BOD) → 11.06');
+check(E.sampleDeadline(items, '2026-10-26', hol, T, { basis: 'min' }).due === '2026-11-02', '여러 항목: 가장 짧은 항목(SS) → 11.02');
+const h2 = new Set([...hol, '2026-10-28']);
+check(E.deadline('2026-10-26', 5, h2) === '2026-11-03', '지정 휴일(10.28) 추가 → 하루 늦어짐');
+check(E.deadline('2026-10-26', 5, hol, { workdays: new Set(['2026-10-31']) }) === '2026-10-31', '토요일을 근무일로 지정 → 10.31');
+const u = E.sampleDeadline(['클로로필a', 'TOC'], '2026-10-26', hol, T);
+check(u.unknown.includes('클로로필a') && u.flagged.includes('TOC'), '미설정(클로로필a)·준용(TOC) 표시');
+check(JSON.stringify(E.remaining('2026-10-26', '2026-11-02', hol)) === '{"days":5,"overdue":false}', '남은 근무일 5일');
+check(E.remaining('2026-11-02', '2026-11-02', hol).days === 0, '기한 당일 = 0 (오늘 마감)');
+check(E.remaining('2026-11-04', '2026-11-02', hol).days === -2, '초과 일수는 달력일 (2일 초과)');
+console.log('\n폴더 이름');
+check(E.caseFolderName({ 의뢰기관: '파주시', 제목: '폐수 검사 의뢰[14-10-4]', 시행: '기후위기대응과-31655' }) === '파주시_폐수 검사 의뢰[14-10-4]_기후위기대응과-31655', '의뢰기관_제목_시행');
+check(!/[\\/:*?"<>|]/.test(E.caseFolderName({ 의뢰기관: 'A', 제목: '가/나:다*?', 시행: 'x-1' })), '쓸 수 없는 글자 제거');
+summary();

@@ -1,0 +1,15 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [01_디자인/05_버튼_알림.css] 버튼·꼬리표·알림(toast)·인쇄 영역 기본
+   하는 일 : 버튼·꼬리표·알림(toast)·인쇄 영역 기본
+   주요 이름: .btn, .warnchip, .toast
+   이럴 때 고침: 버튼 모양
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.warnchip{font-size:11.5px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 8px}
+.infochip{font-size:11.5px;color:var(--ink-2);background:var(--panel-2);border-radius:6px;padding:4px 8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:3000;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.menu-toggle{display:none}
+#print{display:none}

@@ -1,0 +1,20 @@
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [02_화면/11_시계열.html] 시계열 화면
+   하는 일 : 시계열 화면의 자리(제목·버튼·그래프·표 칸). 그리는 동작은 40_화면/11_시계열.js
+   주요 이름: v-ts, tsChart, tsLegend, tbl
+   이럴 때 고침: 이 화면에 버튼·칸을 더하거나 문구를 바꿀 때
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="view" id="v-ts">
+      <div class="card">
+        <div class="card-h"><h3 id="tsTitle"></h3><span class="sub" id="tsSub"></span>
+          <div class="tools"><button class="iconbtn" data-img="tsChart">그림 저장</button></div></div>
+        <div class="legend" id="tsLegend"></div>
+        <div class="chart" id="tsChart"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>데이터</h3><span class="sub" id="tblSub"></span>
+          <div class="tools"><button class="iconbtn" id="tblCopy">표 복사(엑셀 붙여넣기)</button><button class="iconbtn" id="tblCsv">CSV 저장</button></div></div>
+        <div class="tablewrap"><table class="dt" id="tbl"></table></div>
+        <div class="foot" id="tblFoot"></div>
+      </div>
+    </section>
