@@ -1,7 +1,7 @@
 library(tidyverse)
 library(writexl)
 
-setwd("learning/dev_R/[코드] 데이터 처리")
+setwd("learning/4. R/1. 업무/3. 출장기록 데이터 처리")
 
 raw_data <- readxl::read_xls("출장기록.xls")
 
