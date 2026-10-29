@@ -10,3 +10,7 @@ __pycache__/
 build/
 dist/
 *.spec
+
+# macOS / Office 임시 파일
+.DS_Store
+~$*
