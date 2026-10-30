@@ -1,0 +1,33 @@
+{
+    // ── 이 과정에서 권장하는 VS Code 설정 ──
+    // 사용법: 명령 팔레트(Ctrl/Command + Shift + P) → "기본 설정: 사용자 설정 열기(JSON)"
+    //         → 아래 내용 중 필요한 줄을 { } 안에 복사해 붙여 넣기
+    //         (이미 있는 설정과 겹치면 하나만 남기세요)
+
+    // 저장을 잊지 않도록 자동 저장 (포커스가 다른 곳으로 가면 저장)
+    "files.autoSave": "onFocusChange",
+
+    // 글자 크기 (수업 화면 공유 시 16~18 권장)
+    "editor.fontSize": 15,
+    "terminal.integrated.fontSize": 14,
+
+    // 탐색기에서 숨길 파일·폴더 (지우는 것이 아니라 목록에서만 숨김)
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/__pycache__": true,
+        "**/.ipynb_checkpoints": true
+    },
+
+    // 터미널을 열 때 선택된 가상환경(.venv)을 자동으로 켜기
+    "python.terminal.activateEnvironment": true,
+
+    // 노트북 셀에 줄 번호 보이기 (오류 위치 찾기가 쉬움)
+    "notebook.lineNumbers": "on",
+
+    // 코드 오른쪽 끝의 미니맵 끄기 (화면이 좁을 때)
+    "editor.minimap.enabled": false,
+
+    // 파일 끝에 빈 줄 하나 자동으로 넣기, 줄 끝 공백 지우기 (Git 변경 기록을 깔끔하게)
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
+}
