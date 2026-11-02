@@ -1,0 +1,99 @@
+/* (v2.0) 프로젝트 막대 · 대화창 · 관계도 · 병합 · 말풍선(popover) · 고치기 */
+:root { --orig: #1c64d9; --final: #1a7f37; --rev: #6b7785; --arch: #a0a8b3; --conf: #d1242f; --mergec: #8250df; }
+@media (prefers-color-scheme: dark) { :root { --orig: #6ea4ff; --final: #5fcf7c; --rev: #93a3b4; --arch: #5b6673; --conf: #ff7a7a; --mergec: #b39cff; } }
+
+/* 프로젝트 막대 */
+.proj-bar { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; min-width: 0; font-size: 13px; }
+.proj-bar .pname { font-weight: 700; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-bar .pfold { color: var(--muted); font-size: 11px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.menu-check { display: flex; gap: 6px; align-items: center; font-size: 12px; padding: 6px 10px; color: var(--muted); border-top: 1px solid var(--border); }
+
+/* 역할 배지 */
+.role { display: inline-block; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; }
+.r-orig { background: var(--orig); } .r-final { background: var(--final); } .r-rev { background: var(--rev); } .r-arch { background: var(--arch); }
+.file .acts .mini { font-size: 11px; padding: 1px 4px; }
+
+/* 대화창 */
+.modal { position: fixed; inset: 0; background: rgba(0, 0, 0, .4); display: grid; place-items: center; z-index: 60; padding: 16px; }
+.modal-box { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; width: min(560px, 100%); box-shadow: 0 10px 40px rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 12px; }
+.modal-body { display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.modal-body label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+.modal-body input[type=text] { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-weight: 400; }
+.modal-body textarea { width: 100%; min-height: 140px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font: 14px/1.6 var(--font); resize: vertical; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.hint { color: var(--muted); font-size: 12px; font-weight: 400; }
+.notice { padding: 8px 12px; border-radius: 8px; background: var(--mod-soft); color: var(--text); font-size: 13px; border-left: 4px solid var(--mod); }
+.notice.info { background: var(--accent-soft); border-left-color: var(--accent); }
+.notice b { color: var(--mod); }
+
+/* 관계도 */
+.gr-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
+.gr-wrap { position: relative; height: calc(100vh - 250px); min-height: 440px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface-2); background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 22px 22px; overflow: hidden; touch-action: none; }
+.gr-wrap svg { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; }
+.gr-wrap svg.panning { cursor: grabbing; }
+.gr-node { cursor: move; }
+.gr-node rect.box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; filter: drop-shadow(0 1px 2px rgba(0,0,0,.15)); }
+.gr-node.sel rect.box { stroke: var(--accent); stroke-width: 3; }
+.gr-node .bar { stroke: none; }
+.gr-node text { fill: var(--text); font-family: var(--font); pointer-events: none; }
+.gr-node .t-name { font-size: 13px; font-weight: 700; }
+.gr-node .t-sub { font-size: 11px; fill: var(--muted); }
+.gr-node .t-role { font-size: 11px; font-weight: 700; fill: #fff; }
+.gr-node.dragging rect.box { stroke: var(--accent); }
+.gr-edge path { fill: none; stroke: var(--rev); stroke-width: 2; }
+.gr-edge.merge path { stroke: var(--mergec); stroke-dasharray: 6 4; }
+.gr-edge.edit path { stroke: var(--final); }
+.gr-edge:hover path { stroke: var(--accent); stroke-width: 3; }
+.gr-edge { cursor: pointer; }
+.gr-edge .lbl rect { fill: var(--surface); stroke: var(--border); }
+.gr-edge .lbl text { font-size: 11px; fill: var(--text); font-family: var(--font); }
+.gr-help { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: var(--muted); background: var(--surface); padding: 2px 8px; border-radius: 6px; opacity: .9; }
+.gr-zoom { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.gr-zoom button { width: 30px; height: 30px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; cursor: pointer; font-size: 15px; }
+.gr-panel { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; position: sticky; top: 72px; }
+.gr-panel h3 { word-break: break-all; }
+.gr-panel dl { display: grid; grid-template-columns: 74px 1fr; gap: 3px 8px; margin: 0; font-size: 12px; }
+.gr-panel dt { color: var(--muted); } .gr-panel dd { margin: 0; word-break: break-all; }
+.gr-panel ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+.gr-panel .btns { display: flex; flex-wrap: wrap; gap: 5px; }
+.legend-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--muted); }
+.legend-row .ln { display: inline-block; width: 22px; border-top: 2px solid var(--rev); vertical-align: middle; }
+.legend-row .ln.m { border-top: 2px dashed var(--mergec); } .legend-row .ln.e { border-top-color: var(--final); }
+
+/* 병합 */
+.mg-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 12px; align-items: start; }
+.mg-list { position: sticky; top: 72px; max-height: calc(100vh - 250px); overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.mg-item { border: 1px solid var(--border); border-left: 4px solid var(--mod); border-radius: 8px; padding: 8px 10px; background: var(--surface); font-size: 12px; }
+.mg-item.conflict { border-left-color: var(--conf); }
+.mg-item.unresolved { box-shadow: 0 0 0 2px color-mix(in srgb, var(--conf) 35%, transparent); }
+.mg-item.same { border-left-color: var(--rev); }
+.mg-item.on { outline: 2px solid var(--accent); }
+.mg-item .hd { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; cursor: pointer; }
+.mg-item .hd .loc { font-weight: 700; }
+.mg-opt { display: grid; grid-template-columns: 18px 1fr; gap: 4px; padding: 4px 4px; border-radius: 6px; cursor: pointer; align-items: start; }
+.mg-opt:hover { background: var(--surface-2); }
+.mg-opt.dis { opacity: .55; cursor: not-allowed; }
+.mg-opt .vn { font-weight: 700; }
+.mg-opt .why { color: var(--conf); }
+.mg-opt .seg { display: block; margin-top: 2px; }
+.mg-stats { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.mg-name { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); min-width: 220px; }
+.ver-checks { display: flex; gap: 8px; flex-wrap: wrap; }
+.ver-checks label { display: flex; gap: 4px; align-items: center; font-size: 13px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; }
+.ver-checks label.on { border-color: var(--accent); background: var(--accent-soft); }
+
+/* 말풍선 (변경 위에 마우스) */
+.popover { position: fixed; z-index: 55; width: 380px; max-height: 60vh; overflow: auto; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.25); padding: 10px 12px; font-size: 12px; }
+.popover h4 { margin: 0 0 6px; font-size: 13px; }
+.popover .base { color: var(--muted); margin-bottom: 6px; white-space: pre-wrap; }
+
+/* 고치기 */
+.dv-edit-on .dv-sheet [data-bi] { cursor: text; }
+.dv-edit-on .dv-sheet [data-bi]:hover { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.dv-edited { outline: 2px solid #1c64d9 !important; background: rgba(28, 100, 217, .08) !important; }
+.edit-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px; padding: 5px 6px; border-bottom: 1px solid var(--border); }
+.edit-list .o { color: var(--muted); text-decoration: line-through; }
+@media (max-width: 1200px) { .gr-layout, .mg-layout { grid-template-columns: 1fr; } .gr-panel, .mg-list { position: static; max-height: none; } }
+@media (max-width: 900px) { .proj-bar { order: 3; width: 100%; justify-content: flex-start; } }
