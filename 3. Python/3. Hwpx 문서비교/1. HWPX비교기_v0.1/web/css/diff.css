@@ -1,0 +1,63 @@
+/* 변경 표시: 삭제(빨강 취소선) · 추가(초록 밑줄) · 종류 배지 · 나란히 보기 · 이력표 */
+del.d { background: var(--del-soft); color: var(--del); text-decoration: line-through; border-radius: 3px; padding: 0 1px; }
+ins.i { background: var(--add-soft); color: var(--add); text-decoration: none; border-bottom: 2px solid var(--add);
+        border-radius: 3px 3px 0 0; padding: 0 1px; }
+.ws { white-space: pre-wrap; word-break: break-word; }
+
+.kind { display: inline-block; min-width: 38px; text-align: center; padding: 1px 7px; border-radius: 6px;
+        font-size: 12px; font-weight: 700; }
+.k-modified, .k-changed { background: var(--mod-soft); color: var(--mod); }
+.k-added { background: var(--add-soft); color: var(--add); }
+.k-deleted, .k-flip { background: var(--del-soft); color: var(--del); }
+.k-format { background: var(--fmt-soft); color: var(--fmt); }
+.k-reverted { background: var(--rev-soft); color: var(--rev); }
+.tag { display: inline-block; padding: 0 6px; border-radius: 6px; background: var(--surface-2); color: var(--muted);
+       font-size: 11px; margin-left: 3px; }
+.tag.t-num { background: var(--accent-soft); color: var(--accent); }
+
+/* 변경 목록 */
+.changes { display: flex; flex-direction: column; gap: 8px; }
+.change { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--mod);
+          border-radius: 8px; padding: 10px 12px; }
+.change.c-added { border-left-color: var(--add); } .change.c-deleted { border-left-color: var(--del); }
+.change.c-format { border-left-color: var(--fmt); }
+.change.flash { outline: 2px solid var(--accent); }
+.change-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.change-head .loc { font-weight: 600; }
+.change-head .ctx { color: var(--muted); font-size: 12px; }
+.change-head .num { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.change-head .go { margin-left: auto; }
+.change .summary { font-size: 13px; margin-bottom: 4px; }
+.change .text { background: var(--surface-2); border-radius: 6px; padding: 6px 10px; }
+.fmt-notes { margin: 6px 0 0; padding-left: 18px; color: var(--fmt); font-size: 12px; }
+
+/* 나란히 보기 */
+.side-by-side { table-layout: fixed; }
+.side-by-side .loc { width: 150px; }
+.side-by-side td.loc { color: var(--muted); font-size: 12px; }
+.side-by-side tr.r-same td.txt { color: var(--muted); }
+.side-by-side tr.r-modified td.txt { background: color-mix(in srgb, var(--mod-soft) 55%, transparent); }
+.side-by-side tr.r-added td.b, .side-by-side tr.r-added td.a { background: color-mix(in srgb, var(--add-soft) 55%, transparent); }
+.side-by-side tr.r-deleted td.a, .side-by-side tr.r-deleted td.b { background: color-mix(in srgb, var(--del-soft) 55%, transparent); }
+.side-by-side tr.r-format td.txt { background: color-mix(in srgb, var(--fmt-soft) 55%, transparent); }
+.side-by-side tr.gap td { text-align: center; color: var(--muted); font-size: 12px; background: var(--surface-2); }
+.side-by-side tr.flash td { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* 단계 카드 (요약) */
+.timeline { display: flex; flex-direction: column; gap: 10px; }
+.vchip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 8px;
+         padding: 3px 9px; font-size: 13px; }
+.vchip b { color: var(--accent); }
+.arrow { color: var(--muted); margin: 0 4px; }
+.hl { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.hl li { display: grid; grid-template-columns: 46px minmax(110px, 200px) 1fr; gap: 8px; align-items: baseline; cursor: pointer;
+         padding: 3px 4px; border-radius: 6px; }
+.hl li:hover { background: var(--surface-2); }
+.hl .loc { color: var(--muted); font-size: 12px; }
+
+/* 이력 추적표 */
+.hist td.v { min-width: 180px; }
+.hist td.v.changed { background: color-mix(in srgb, var(--mod-soft) 70%, transparent); }
+.hist td.v.none { color: var(--muted); font-style: italic; }
+.hist th .vn { color: var(--accent); }
+.hist th .vd { font-weight: 400; color: var(--muted); font-size: 11px; display: block; }

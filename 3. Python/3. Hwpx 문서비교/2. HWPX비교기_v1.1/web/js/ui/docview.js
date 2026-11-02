@@ -1,0 +1,180 @@
+// (v1.1) [문서 보기] 탭 — 원본 문서 모양 그대로 그리고 바뀐 곳 표시
+//   그리기(HTML 만들기)는 파이썬(hwpxdiff/render/)이 하고, 여기서는 보기 방식·확대·변경 사이 이동만 맡는다.
+//   보기 방식: merged(한 화면에 추가·삭제 함께) | pair(이전 A | 새 B 나란히) | plain(새 버전 원본만, 표시 없음)
+import { api } from '../api.js';
+import { ensurePair, readyItems, state, versionNo } from '../store.js';
+import { $, esc, KIND_CLASS, toast } from '../util.js';
+
+const VIEWS = [['merged', '한 화면에 표시'], ['pair', '나란히 (A | B)'], ['plain', '원본만 (B)']];
+const ZOOMS = [['fit', '폭 맞춤'], ['0.5', '50%'], ['0.75', '75%'], ['1', '100%'], ['1.25', '125%']];
+let loadingKey = '';
+let syncing = false;
+let pauseSync = 0;      // 변경으로 이동하는 동안 '함께 스크롤'을 잠시 멈춤 (설정값은 그대로)
+
+const docKey = () => [state.pair.a, state.pair.b, state.doc.view, JSON.stringify(state.options)].join('|');
+
+/** 서버에서 문서 HTML 받아 오기 (같은 조건이면 다시 받지 않음). cid 를 주면 그 변경으로 이동 */
+export async function loadDoc(cid = null) {
+  const d = state.doc;
+  if (cid != null) d.goto = cid;
+  ensurePair();
+  if (readyItems().length < 1) return renderDoc();
+  const key = docKey();
+  if (d.data && d.key === key) return renderDoc();
+  if (loadingKey === key) return;              // 이미 받는 중
+  loadingKey = key;
+  d.data = null;
+  renderDoc();
+  try {
+    const one = readyItems().length < 2 || d.view === 'plain';
+    const data = await api.render(one ? (state.pair.b || readyItems()[0].id) : state.pair.a,
+                                  one ? null : state.pair.b, d.view === 'pair' ? 'pair' : 'merged');
+    if (key !== docKey()) return;              // 받는 사이 조건이 바뀜
+    d.data = data;
+    d.key = key;
+    d.cur = null;
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    if (loadingKey === key) loadingKey = '';
+  }
+  renderDoc();
+}
+
+export function renderDoc() {
+  const box = $('#tab-doc');
+  const ready = readyItems();
+  if (!ready.length) {
+    box.innerHTML = `<div class="card hero"><b>볼 HWPX 파일을 넣어 주세요</b>
+      한글 문서 모양(표·글꼴·정렬)을 그대로 그리고, 2개 이상이면 바뀐 곳을 문서 위에 표시합니다.</div>`;
+    return;
+  }
+  ensurePair();
+  const d = state.doc;
+  const single = ready.length < 2;
+  const opt = sel => ready.map(i => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>v${versionNo(i.id)} · ${esc(i.name)}</option>`).join('');
+  const changes = d.data?.changes || [];
+  const pos = d.cur == null ? 0 : changes.findIndex(c => c.id === d.cur) + 1;
+
+  box.innerHTML = `
+    <div class="card dv-toolbar">
+      <div class="toolbar">
+        ${single ? '' : `<label>이전(A) <select id="dvA">${opt(state.pair.a)}</select></label>
+        <button class="btn btn-sm" id="dvSwap" title="A·B 바꾸기">⇄</button>`}
+        <label>${single ? '문서' : '새(B)'} <select id="dvB">${opt(state.pair.b || ready[0].id)}</select></label>
+        ${single ? '' : `<div class="seg">${VIEWS.map(([k, t]) => `<button data-view="${k}" class="${d.view === k ? 'on' : ''}">${t}</button>`).join('')}</div>`}
+        <select id="dvZoom" title="확대">${ZOOMS.map(([k, t]) => `<option value="${k}" ${d.zoom === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        ${d.view === 'pair' && !single ? `<label class="check"><input type="checkbox" id="dvSync" ${d.sync ? 'checked' : ''}> 함께 스크롤</label>` : ''}
+      </div>
+      ${changes.length ? `<div class="toolbar dv-navbar">
+        <button class="btn btn-sm" id="dvPrev">◀ 이전 변경</button>
+        <span class="mono">${pos} / ${changes.length}</span>
+        <button class="btn btn-sm" id="dvNext">다음 변경 ▶</button>
+        <span class="muted">${esc(d.data.headline || '')}</span>
+        <span class="dv-legend"><span class="dv-ins">새 글자</span> <span class="dv-gdel">지운 글자</span>
+          <span class="lg-mod">바뀐 문단·칸</span> <span class="dv-fmtc">서식 바뀜</span></span>
+      </div>` : ''}
+    </div>
+    <div class="dv-layout ${changes.length ? '' : 'no-nav'}">
+      ${body(d, single)}
+      ${changes.length ? `<aside class="dv-nav card"><b>바뀐 곳 ${changes.length}건</b><ol>${changes.map(c => `
+        <li data-cid="${c.id}" class="${c.id === d.cur ? 'on' : ''}"><span class="kind ${KIND_CLASS[c.type]}">${esc(c.label)}</span>
+          <span class="loc">${esc(c.location)}</span><span class="sum">${esc(c.summary)}</span></li>`).join('')}</ol></aside>` : ''}
+    </div>`;
+
+  bind(single, changes);
+  if (!d.data) {
+    if (!loadingKey) loadDoc();
+    return;
+  }
+  requestAnimationFrame(() => {
+    applyZoom();
+    if (d.goto != null) { const g = d.goto; d.goto = null; goTo(g); }
+  });
+}
+
+function body(d, single) {
+  if (!d.data) return `<div class="dv-scroll"><div class="hero">문서를 그리는 중…</div></div>`;
+  if (d.data.view === 'pair') {
+    return `<div class="dv-pair">
+      <div class="dv-pane"><div class="dv-cap">이전 (v${versionNo(state.pair.a)}) — <span class="dv-del">지운 글자</span></div><div class="dv-scroll" data-pane="a"><div class="dv-zoom">${d.data.html_a}</div></div></div>
+      <div class="dv-pane"><div class="dv-cap">새 (v${versionNo(state.pair.b)}) — <span class="dv-ins">넣은 글자</span></div><div class="dv-scroll" data-pane="b"><div class="dv-zoom">${d.data.html_b}</div></div></div>
+    </div>`;
+  }
+  return `<div class="dv-scroll"><div class="dv-zoom">${d.data.html}</div></div>`;
+}
+
+function bind(single, changes) {
+  const d = state.doc;
+  const reload = () => { d.data = null; loadDoc(); };
+  if (!single) {
+    $('#dvA').onchange = e => { state.pair.a = e.target.value; reload(); };
+    $('#dvSwap').onclick = () => { state.pair = { a: state.pair.b, b: state.pair.a }; reload(); };
+    document.querySelectorAll('#tab-doc [data-view]').forEach(b => b.onclick = () => { d.view = b.dataset.view; reload(); });
+  }
+  $('#dvB').onchange = e => { state.pair.b = e.target.value; reload(); };
+  $('#dvZoom').onchange = e => { d.zoom = e.target.value; applyZoom(); };
+  if ($('#dvSync')) $('#dvSync').onchange = e => { d.sync = e.target.checked; };
+  if (changes.length) {
+    $('#dvPrev').onclick = () => step(-1);
+    $('#dvNext').onclick = () => step(1);
+    document.querySelectorAll('.dv-nav li').forEach(li => li.onclick = () => goTo(Number(li.dataset.cid)));
+  }
+  // 문서 위 표시를 누르면 목록에서도 선택
+  document.querySelectorAll('#tab-doc .dv-sheet').forEach(sheet => sheet.addEventListener('click', e => {
+    const el = e.target.closest('[data-cid]');
+    if (el) goTo(Number(el.dataset.cid), false);
+  }));
+  // 나란히 보기: 한쪽을 스크롤하면 다른 쪽도 같은 비율로
+  const panes = [...document.querySelectorAll('#tab-doc .dv-pair .dv-scroll')];
+  panes.forEach((p, k) => p.addEventListener('scroll', () => {
+    if (!d.sync || syncing || Date.now() < pauseSync) return;
+    const o = panes[1 - k];
+    syncing = true;
+    o.scrollTop = (p.scrollTop / Math.max(1, p.scrollHeight - p.clientHeight)) * (o.scrollHeight - o.clientHeight);
+    requestAnimationFrame(() => (syncing = false));
+  }));
+  window.onresize = () => state.tab === 'doc' && applyZoom();
+}
+
+function applyZoom() {
+  document.querySelectorAll('#tab-doc .dv-scroll').forEach(sc => {
+    const z = sc.querySelector('.dv-zoom');
+    const sheet = sc.querySelector('.dv-sheet');
+    if (!z || !sheet) return;
+    let k = Number(state.doc.zoom);
+    if (state.doc.zoom === 'fit') {
+      z.style.zoom = 1;
+      k = Math.min(1, (sc.clientWidth - 28) / sheet.offsetWidth);
+    }
+    z.style.zoom = k;
+  });
+}
+
+function step(dir) {
+  const list = state.doc.data?.changes || [];
+  if (!list.length) return;
+  const k = list.findIndex(c => c.id === state.doc.cur);
+  const n = k < 0 ? (dir > 0 ? 0 : list.length - 1) : (k + dir + list.length) % list.length;
+  goTo(list[n].id);
+}
+
+/** 변경 번호로 이동: 문서 안 표시로 스크롤 + 깜빡임, 목록·번호 갱신 */
+function goTo(cid, scroll = true) {
+  const d = state.doc;
+  d.cur = cid;
+  const list = d.data?.changes || [];
+  const pos = list.findIndex(c => c.id === cid) + 1;
+  const counter = document.querySelector('#tab-doc .dv-navbar .mono');
+  if (counter) counter.textContent = `${pos} / ${list.length}`;
+  document.querySelectorAll('.dv-nav li').forEach(li => li.classList.toggle('on', Number(li.dataset.cid) === cid));
+  const li = document.querySelector(`.dv-nav li[data-cid="${cid}"]`);
+  if (li) li.scrollIntoView({ block: 'nearest' });
+  pauseSync = Date.now() + 900;                     // 각 쪽을 따로 정확히 맞춤
+  document.querySelectorAll(`#tab-doc .dv-sheet [data-cid="${cid}"]`).forEach(el => {
+    if (scroll) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.remove('dv-focus');
+    void el.offsetWidth;                            // 애니메이션 다시 시작
+    el.classList.add('dv-focus');
+  });
+}

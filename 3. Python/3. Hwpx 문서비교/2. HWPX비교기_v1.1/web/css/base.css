@@ -1,0 +1,43 @@
+/* 색·글꼴·기본 요소. 색을 바꾸려면 :root 의 변수만 고친다 (어두운 화면은 아래 블록). */
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-2: #f0f3f7;
+  --border: #dde3ea;
+  --text: #1f2933;
+  --muted: #66788a;
+  --accent: #1c64d9;
+  --accent-soft: #e6efff;
+  --mod: #c26a00;      --mod-soft: #fff1dc;
+  --add: #23803a;      --add-soft: #dcf5e2;
+  --del: #c62828;      --del-soft: #fde3e3;
+  --fmt: #6a43c9;      --fmt-soft: #eee7ff;
+  --rev: #0f7b8a;      --rev-soft: #dcf3f5;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+  --font: "Pretendard", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --mono: "D2Coding", "Consolas", "Menlo", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #11161c; --surface: #1a2129; --surface-2: #222b35; --border: #2f3a47;
+    --text: #e4e9ef; --muted: #93a3b4; --accent: #6ea4ff; --accent-soft: #1d2d47;
+    --mod: #f0a54a; --mod-soft: #3a2a14; --add: #5fcf7c; --add-soft: #173322;
+    --del: #ff7a7a; --del-soft: #3d1c1c; --fmt: #b39cff; --fmt-soft: #2a2244;
+    --rev: #5cc8d6; --rev-soft: #163437;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); }
+h1, h2, h3 { margin: 0; font-weight: 700; }
+h1 { font-size: 17px; }
+h2 { font-size: 14px; }
+h3 { font-size: 14px; }
+button, input, select { font: inherit; color: inherit; }
+.muted { color: var(--muted); font-size: 12px; }
+.mono { font-family: var(--mono); }
+[hidden] { display: none !important; }

@@ -1,0 +1,40 @@
+/* 문서 보기(원본 모양) 전용 스타일 — 대시보드(/api/docview.css)와 저장 보고서가 함께 쓴다.
+   종이는 항상 흰 바탕(어두운 화면에서도 원본처럼), 바뀐 곳 색만 여기서 정한다. */
+:root {   /* 바뀐 곳 색 (대시보드 변수와 겹치지 않게 dv- 접두어) */
+  --dv-ins: #1a7f37; --dv-ins-bg: #dafbe1; --dv-del: #cf222e; --dv-del-bg: #ffebe9;
+  --dv-mod-bg: rgba(255, 196, 0, .16); --dv-mod-bar: #e8a200; --dv-fmt: #8250df;
+}
+.dv-sheet {
+  background: #fff; color: #000; margin: 0 auto 24px; box-sizing: content-box;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.06);
+  font-family: "Batang", "바탕", serif; font-size: 11pt;
+}
+.dv-p { margin: 0; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
+.dv-empty { line-height: 1.2; }
+.dv-tbl { border-collapse: collapse; table-layout: fixed; max-width: 100%; }
+.dv-td { padding: 2px 4px; overflow-wrap: anywhere; }
+.dv-pb { border-top: 1px dashed #b8c0cc; margin: 18px -40px; text-align: center; height: 0; }
+.dv-pb span { position: relative; top: -9px; background: #fff; color: #8a94a3; font: 11px sans-serif; padding: 0 8px; }
+.dv-sub { border: 1px dashed #b8c0cc; border-radius: 4px; padding: 2px 6px; margin: 4px 0; position: relative; }
+.dv-sublabel { font: 10px sans-serif; color: #8a94a3; }
+
+/* 바뀐 곳 표시 */
+.dv-m { position: relative; }
+p.dv-m, div.dv-m { box-shadow: -10px 0 0 -6px var(--dv-mod-bar); background: var(--dv-mod-bg); }
+p.dv-added { box-shadow: -10px 0 0 -6px var(--dv-ins); background: var(--dv-ins-bg); }
+p.dv-deleted { box-shadow: -10px 0 0 -6px var(--dv-del); background: var(--dv-del-bg); }
+p.dv-format { box-shadow: -10px 0 0 -6px var(--dv-fmt); background: rgba(130, 80, 223, .08); }
+td.dv-m { box-shadow: inset 0 0 0 2px var(--dv-mod-bar); background-image: linear-gradient(var(--dv-mod-bg), var(--dv-mod-bg)); }
+td.dv-added { box-shadow: inset 0 0 0 2px var(--dv-ins); background-image: linear-gradient(var(--dv-ins-bg), var(--dv-ins-bg)); }
+td.dv-deleted { box-shadow: inset 0 0 0 2px var(--dv-del); background-image: linear-gradient(var(--dv-del-bg), var(--dv-del-bg)); }
+td.dv-format { box-shadow: inset 0 0 0 2px var(--dv-fmt); }
+.dv-ins { background: var(--dv-ins-bg); border-bottom: 2px solid var(--dv-ins); }
+.dv-del { background: var(--dv-del-bg); text-decoration: line-through; text-decoration-color: var(--dv-del); }
+.dv-gdel { color: var(--dv-del) !important; background: var(--dv-del-bg); text-decoration: line-through; }
+.dv-fmtc { outline: 1.5px dotted var(--dv-fmt); outline-offset: 1px; }
+.dv-ghost { margin: 3px 0; padding: 2px 6px; border-left: 4px solid var(--dv-del); background: var(--dv-del-bg); color: var(--dv-del); }
+.dv-ghost del { white-space: pre-wrap; }
+.dv-badge { display: block; font: 10px sans-serif; color: var(--dv-del); opacity: .85; }
+.dv-focus { outline: 3px solid #1c64d9 !important; outline-offset: 2px; animation: dv-blink 1.2s ease 2; }
+@keyframes dv-blink { 50% { outline-color: transparent; } }
+@media print { .dv-sheet { box-shadow: none; } }
