@@ -1,0 +1,34 @@
+  <div class="card" id="demoCard" style="display:none">
+    <h3>시연</h3>
+    <div class="row">
+      <button class="pri" onclick="demoSetup(false)">시연 시작(가상 자료 자동 준비)</button>
+      <button onclick="demoSetup(true)">시연 처음부터 다시</button>
+      <span class="muted small">가상 기관의 원본 엑셀 12개·팀 제출 문서 5개·오류를 심은 취합본으로 바로 시연합니다. 다른 기관·다른 오류로 시연하려면 <b>5 시연자료</b> 탭에서 무작위 시연자료를 만드세요.</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3><span class="step">1</span>작업 폴더</h3>
+    <div class="row"><span id="wfolder" class="path muted">열린 작업 폴더 없음</span></div>
+    <div class="row" style="margin-top:8px">
+      <button onclick="pickWork()">작업 폴더 열기·만들기</button>
+      <select id="recent" onchange="if(this.value)openWork(this.value)"><option value="">최근 작업…</option></select>
+    </div>
+    <div class="muted small" style="margin-top:6px">작업 폴더에는 이력 장부(작업장부.db), 작업본(문서 버전), 내보내기 파일이 저장됩니다. 원본 파일은 수정하지 않습니다.</div>
+  </div>
+  <div class="card">
+    <h3><span class="step">2</span>검증할 한글 문서(hwpx)</h3>
+    <div id="target" class="muted">선택한 문서 없음</div>
+    <div class="row" style="margin-top:8px"><button onclick="pickTarget()" id="btnTarget">문서 선택</button>
+      <span class="muted small">선택하면 숫자마다 누름틀(이름표 붙은 칸)을 씌운 <b>작업본 v001</b>을 만듭니다.</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="step">3</span>원본 자료(엑셀·팀 제출 hwpx)</h3>
+    <div class="row" style="margin-bottom:8px">
+      <button onclick="pickSources(true)">폴더째 추가</button>
+      <button onclick="pickSources(false)">파일 추가</button>
+      <button onclick="checkSources()">원본 변경 확인</button>
+      <span class="muted small" id="srcCount"></span>
+    </div>
+    <div style="max-height:340px;overflow:auto"><table class="list" id="srcTable"></table></div>
+  </div>
+  <div class="row"><button class="pri" style="font-size:15px;padding:9px 22px" onclick="runVerify(true)">검증 실행 →</button></div>

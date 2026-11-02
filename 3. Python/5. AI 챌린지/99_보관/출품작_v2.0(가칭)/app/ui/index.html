@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>취합검증 도우미(가칭)</title>
+<link rel="stylesheet" href="/ui/css/app.css">
+</head>
+<body>
+<!-- 화면 뼈대. 각 페이지 내용은 ui/pages/<이름>.html, 동작은 ui/js/pages/<이름>.js 에 있다. -->
+<header>
+  <div class="logo" id="logo">취합검증 도우미(가칭)</div>
+  <div class="meta" id="hdmeta">작업 폴더를 여세요</div>
+  <button onclick="quit()">종료</button>
+</header>
+<nav id="tabs">
+  <button data-p="prep" class="on"><span class="num">1</span>작업 준비</button>
+  <button data-p="check"><span class="num">2</span>검증</button>
+  <button data-p="input"><span class="num">3</span>입력하기</button>
+  <button data-p="hist"><span class="num">4</span>이력</button>
+  <button data-p="mock"><span class="num">5</span>시연자료</button>
+  <button data-p="map"><span class="num">6</span>구성도</button>
+  <button data-p="conf"><span class="num">7</span>설정·도움말</button>
+</nav>
+<main>
+<section class="page on" id="p-prep"></section>
+<section class="page" id="p-check" style="padding:0"></section>
+<section class="page" id="p-input" style="padding:0"></section>
+<section class="page" id="p-hist"></section>
+<section class="page" id="p-mock"></section>
+<section class="page" id="p-map" style="padding:0"></section>
+<section class="page" id="p-conf"></section>
+</main>
+
+<div class="modal" id="fsModal"><div class="box">
+  <div class="hd" id="fsTitle">선택</div>
+  <div class="bd">
+    <div class="row" style="margin-bottom:6px"><button class="sm" onclick="fsUp()">▲ 위로</button><button class="sm" onclick="fsGo('')">처음</button>
+      <input id="fsPath" style="flex:1" onkeydown="if(event.key==='Enter')fsGo(this.value)"></div>
+    <div id="fsList"></div>
+  </div>
+  <div class="ft"><span class="muted small" id="fsHint" style="flex:1"></span>
+    <button id="fsNew" onclick="fsMkdir()">새 폴더</button>
+    <button onclick="closeModal()">닫기</button><button class="pri" id="fsOk" onclick="fsOk()">선택</button></div>
+</div></div>
+<div class="modal" id="askModal"><div class="box" style="width:min(480px,94vw)">
+  <div class="hd" id="askT"></div><div class="bd" id="askB"></div>
+  <div class="ft"><button onclick="askDone(false)">취소</button><button class="pri" onclick="askDone(true)">확인</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="busy" style="cursor:wait;background:rgba(255,255,255,.35)"><div class="box" style="width:auto;padding:16px 26px;font-weight:bold">처리 중입니다…</div></div>
+
+<script src="/ui/js/core.js"></script>
+<script src="/ui/js/fsdialog.js"></script>
+<script src="/ui/js/pages/prep.js"></script>
+<script src="/ui/js/pages/check.js"></script>
+<script src="/ui/js/pages/input.js"></script>
+<script src="/ui/js/pages/hist.js"></script>
+<script src="/ui/js/pages/mock.js"></script>
+<script src="/ui/js/pages/map.js"></script>
+<script src="/ui/js/pages/conf.js"></script>
+</body>
+</html>

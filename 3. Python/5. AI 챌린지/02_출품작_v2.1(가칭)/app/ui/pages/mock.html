@@ -1,0 +1,48 @@
+<div class="card">
+  <h3><span class="step">1</span>무작위 시연자료 만들기</h3>
+  <div class="muted small" style="margin-bottom:8px">가상 기관 하나의 요구자료 작성 상황(원본 엑셀·팀 답변서·오류를 심은 취합본·공문·참고자료·재제출본·정답표)을 무작위로 만듭니다. 모든 이름과 수치는 가상입니다. 씨앗값이 같으면 같은 자료가 다시 만들어집니다.</div>
+  <div class="mgrid">
+    <label>씨앗값 <input id="mkSeed" placeholder="비우면 무작위" style="width:120px"></label>
+    <label>크기 <select id="mkSize"></select></label>
+    <label>오류 수 <input id="mkErr" type="number" min="0" max="30" value="10" style="width:70px"></label>
+    <label>공문 형식 <select id="mkFmt"><option value="both">hwpx + odt</option><option value="hwpx">hwpx</option><option value="odt">odt</option></select></label>
+    <label>취합본 형식 <select id="mkTfmt" class="tfmt"></select></label>
+    <label title="원본을 xlsx·ods·csv·pdf·docx 로 섞어 만듭니다"><input type="checkbox" id="mkMix"> 원본 형식 섞기</label>
+    <label title="AI 읽기 시험용: 정해지지 않은 문형의 계산 문장을 섞습니다"><input type="checkbox" id="mkFree"> 자유 문형 계산 문장</label>
+  </div>
+  <div class="row small" style="margin-top:8px"><b>오류 종류</b> <span id="mkKinds" class="row"></span></div>
+  <div class="row small" style="margin-top:6px"><b>함께 만들 문서</b>
+    <label><input type="checkbox" id="mkGong" checked> 공문(요구·의뢰·결과·협조)</label>
+    <label><input type="checkbox" id="mkGuide" checked> 참고자료(시험법 요약본·매뉴얼·지침)</label>
+    <label><input type="checkbox" id="mkForm" checked> 작성틀</label>
+    <label><input type="checkbox" id="mkResub" checked> 재제출본</label>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="pri" id="mkBtn" onclick="mkGenerate()">만들기</button><span id="mkMsg" class="muted small"></span></div>
+</div>
+
+<div class="card">
+  <h3><span class="step">2</span>만든 시연자료</h3>
+  <div class="row small muted" style="margin-bottom:6px">저장 위치: <span id="mkRoot" class="path"></span></div>
+  <div style="max-height:320px;overflow:auto"><table class="list" id="mkList"></table></div>
+</div>
+
+<div class="card" id="mkScoreCard" style="display:none">
+  <h3>채점 결과 <span id="mkScoreName" class="muted small"></span></h3>
+  <div id="mkScoreSum" class="chips"></div>
+  <div style="max-height:360px;overflow:auto"><table class="list" id="mkScoreT"></table></div>
+</div>
+
+<div class="card">
+  <h3><span class="step">3</span>자동 일괄 평가</h3>
+  <div class="muted small" style="margin-bottom:8px">무작위 시나리오를 여러 개 만들어 검증 엔진으로 채점합니다. 심은 오류를 얼마나 찾는지(검출률), 정상 칸을 틀렸다고 하지 않는지(빨강 오탐)를 셉니다. 보고서는 '평가결과' 폴더에 저장됩니다.</div>
+  <div class="mgrid">
+    <label>시나리오 수 <input id="evN" type="number" min="1" max="200" value="20" style="width:80px"></label>
+    <label>크기 <select id="evSize"></select></label>
+    <label>시나리오당 오류 <input id="evErr" type="number" min="1" max="30" value="10" style="width:70px"></label>
+    <label>첫 씨앗값 <input id="evSeed" placeholder="비우면 무작위" style="width:120px"></label>
+    <label>취합본 형식 <select id="evTfmt" class="tfmt"></select></label>
+    <label><input type="checkbox" id="evMix"> 원본 형식 섞기</label>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="pri" id="evBtn" onclick="evRun()">평가 실행</button><span id="evMsg" class="muted small"></span></div>
+  <div id="evOut"></div>
+</div>

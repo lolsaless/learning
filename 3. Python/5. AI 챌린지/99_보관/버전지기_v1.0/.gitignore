@@ -1,0 +1,5 @@
+samples/*
+!samples/여기에_샘플_넣기.md
+node_modules/
+*.log
+.DS_Store

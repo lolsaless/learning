@@ -1,0 +1,26 @@
+  <div class="split">
+    <div class="left">
+      <div class="banner">① 아래 문서에서 <b>넣을 칸</b>을 누르고 ② 오른쪽 원본에서 셀을 끌어 고른 뒤 ③ <b>[입력하기]</b>를 누르세요. 여러 셀을 고르면 같은 모양으로 차례대로 채웁니다.</div>
+      <div class="row" style="margin-bottom:8px">넣을 칸: <b id="inTarget" class="path">없음</b></div>
+      <div id="docView2" class="doc"></div>
+    </div>
+    <div class="right">
+      <div class="row" style="margin-bottom:6px">
+        <select id="inSrc" onchange="loadSheets()"></select>
+        <select id="inSheet" onchange="loadGrid()"></select>
+      </div>
+      <div class="row small" style="margin-bottom:6px">
+        자릿수 <select id="inDec"><option value="">원본 표시대로</option><option>0</option><option>1</option><option>2</option><option>3</option></select>
+        배율 <select id="inScale"><option value="1">그대로</option><option value="0.001">÷1,000 (원→천원)</option><option value="0.000001">÷1,000,000</option><option value="100">×100 (비율→%)</option></select>
+        <label><input type="checkbox" id="inComma" checked> 천 단위 쉼표</label>
+      </div>
+      <div class="row small muted" style="margin-bottom:6px">고른 셀: <b id="inSel">없음</b></div>
+      <div class="gridwrap" id="gridWrap"><div class="empty">원본을 고르세요</div></div>
+      <div class="bar">
+        <button class="pri" onclick="doInput()">입력하기</button>
+        <span>대기 중 <span class="pendn" id="pendN2">0</span>건</span>
+        <button onclick="saveVersion()">저장(새 버전)</button>
+        <button onclick="dropAll()">변경 취소</button>
+      </div>
+    </div>
+  </div>

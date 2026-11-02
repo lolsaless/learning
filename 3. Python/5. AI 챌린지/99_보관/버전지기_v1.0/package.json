@@ -1,0 +1,13 @@
+{
+  "name": "versionkeeper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "버전지기(가칭) — hwpx·xlsx 문서이력 관리 (2026 공공 AI 대전환 챌린지 세션1)",
+  "scripts": {
+    "test": "node --test \"tests/unit/**/*.test.js\" \"tests/scenario/**/*.test.js\"",
+    "perf": "node tests/perf/run.js",
+    "build": "node tools/build.js",
+    "ai-eval": "node tests/ai_eval/run.js"
+  }
+}

@@ -1,0 +1,7 @@
+# 숫자지기 — 저장소에 올리지 않을 것
+__pycache__/
+*.pyc
+최근작업.json
+시연자료/작업(시연)/
+e2e_shots/
+*.db-journal

@@ -1,0 +1,24 @@
+  <div class="split">
+    <div class="left" id="checkLeft">
+      <div id="banners"></div>
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-bottom:10px">
+        <button onclick="runVerify(false)">다시 검증</button>
+        <button onclick="nextIssue(1)">다음 문제 ▶</button>
+        <button id="btnAiRead" onclick="aiRead()" title="규칙으로 못 읽은 문장의 계산을 AI 가 검산식으로 읽고, 프로그램이 다시 계산합니다">AI 로 문장 읽기</button>
+        <button onclick="aiSummary()">검증 요약 만들기</button>
+        <label class="small"><input type="checkbox" id="dimOk" onchange="toggleDim()"> 일치한 칸 색 숨기기</label>
+        <span class="legend small muted" id="legend"></span>
+      </div>
+      <div id="docView" class="doc"><div class="empty">검증을 실행하세요</div></div>
+    </div>
+    <div class="right">
+      <div id="detail" class="detail"><div class="empty">문서에서 숫자를 누르면<br>출처와 이력이 여기에 나옵니다.</div></div>
+      <div class="bar">
+        <span>대기 중 변경 <span class="pendn" id="pendN">0</span>건</span>
+        <button class="pri" onclick="saveVersion()">저장(새 버전)</button>
+        <button onclick="dropAll()">변경 취소</button>
+        <button onclick="doExport()">내보내기</button>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,10 @@
+  <div class="card">
+    <h3>값 이력 <span class="muted small">(값이 바뀔 때마다 한 줄씩 쌓입니다. 지우지 않습니다)</span></h3>
+    <div class="row" style="margin-bottom:6px"><input id="hq" placeholder="칸 이름·위치·출처로 찾기" oninput="renderHist()" style="width:280px">
+      <label class="small"><input type="checkbox" id="hHideInit" checked onchange="renderHist()"> '작업본 생성' 줄 숨기기</label>
+      <button onclick="loadHist()">새로고침</button></div>
+    <div style="max-height:380px;overflow:auto"><table class="list" id="histT"></table></div>
+  </div>
+  <div class="card"><h3>작업본 버전</h3><table class="list" id="verT"></table></div>
+  <div class="card"><h3>원본 변경 기록</h3><div style="max-height:240px;overflow:auto"><table class="list" id="srcEvT"></table></div></div>
+  <div class="card"><h3>검증 기록</h3><div style="max-height:240px;overflow:auto"><table class="list" id="runT"></table></div></div>

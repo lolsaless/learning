@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>숫자지기</title>
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --line:#d9dee6; --text:#1f2933; --muted:#66707c; --brand:#24527a; --brand2:#3b6ea5;
+  --ok:#D9F2D9; --ok2:#E8F5E1; --user:#C8E6C9; --warn:#FFF3B0; --warn2:#FFE08A; --bad:#F8C9C9; --gray:#EEEEEE;
+  --pend:#2f6fd6; --focus:#ff9800;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.5 "Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 12px;color:var(--text)}
+button:hover{border-color:var(--brand2)}
+button.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:bold}
+button.pri:hover{background:var(--brand2)}
+button.sm{padding:3px 8px;font-size:12px}
+button:disabled{opacity:.45;cursor:default}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:#fff;color:var(--text)}
+header{display:flex;align-items:center;gap:14px;padding:8px 16px;background:var(--brand);color:#fff}
+header .logo{font-size:18px;font-weight:bold;letter-spacing:1px}
+header .meta{font-size:12px;opacity:.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+nav{display:flex;gap:2px;padding:0 16px;background:#fff;border-bottom:1px solid var(--line)}
+nav button{border:none;border-bottom:3px solid transparent;border-radius:0;padding:10px 16px;background:none;font-size:14px}
+nav button.on{border-bottom-color:var(--brand);font-weight:bold;color:var(--brand)}
+nav .num{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;background:#e5ebf2;text-align:center;font-size:11px;margin-right:6px}
+nav button.on .num{background:var(--brand);color:#fff}
+main{height:calc(100% - 96px);overflow:hidden}
+.page{display:none;height:100%;overflow:auto;padding:16px}
+.page.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--brand)}
+.card h3 .step{display:inline-block;background:var(--brand);color:#fff;border-radius:4px;padding:0 7px;margin-right:8px;font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)} .small{font-size:12px}
+.path{font-family:Consolas,monospace;font-size:12px;word-break:break-all}
+table.list{border-collapse:collapse;width:100%}
+table.list th,table.list td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}
+table.list th{background:#f0f3f7;font-weight:bold;position:sticky;top:0}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid rgba(0,0,0,.08)}
+.split{display:flex;height:100%;gap:0}
+.split .left{flex:1.25;overflow:auto;padding:16px;border-right:1px solid var(--line);background:#fbfcfd}
+.split .right{flex:1;overflow:auto;padding:16px;min-width:380px}
+/* 문서 그리기 */
+.doc{background:#fff;border:1px solid var(--line);border-radius:6px;padding:26px 30px;max-width:900px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.doc p{margin:4px 0}
+.doc p.title{font-size:19px;font-weight:bold;text-align:center;margin:0 0 14px}
+.doc p.head{font-weight:bold;font-size:14px;margin-top:16px}
+.doc p.note{font-size:12px;color:#444}
+.doc table{border-collapse:collapse;width:100%;margin:6px 0 10px;font-size:12.5px}
+.doc td{border:1px solid #888;padding:4px 6px;text-align:center}
+.doc td.h{background:#e3e7f1;font-weight:bold}
+.doc .ttl{font-size:11px;color:var(--muted);margin-top:8px}
+.num{padding:0 3px;border-radius:3px;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.num:hover{outline:2px solid var(--brand2)}
+.num.sel{outline:2px solid var(--focus);outline-offset:1px}
+.st-ok,.st-ok_calc,.st-single{background:var(--ok)}
+.st-ok_user{background:var(--user)}
+.st-multi,.st-unknown{background:var(--warn)}
+.st-conflict{background:var(--warn2)}
+.st-mismatch,.st-unit,.st-calc{background:var(--bad)}
+.st-empty{background:var(--gray);display:inline-block;min-width:34px;min-height:16px}
+.num.pend{border:1.5px dashed var(--pend)}
+.num .old{text-decoration:line-through;color:#a33;margin-right:3px}
+.num .new{color:var(--pend);font-weight:bold}
+.texterr{background:var(--bad);border-bottom:2px solid #c00}
+.dim .num.st-ok,.dim .num.st-ok_calc,.dim .num.st-single,.dim .num.st-ok_user{background:transparent}
+/* 요약 칩 */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+.chip b{font-size:16px;margin-left:4px}
+.chip.on{outline:2px solid var(--brand)}
+.banner{border:1px solid #e6c34a;background:#fff8dc;border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.banner.red{border-color:#e08a8a;background:#fdeeee}
+/* 상세 */
+.detail h4{margin:0 0 4px;font-size:15px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:4px 10px;margin:8px 0}
+.kv div:nth-child(odd){color:var(--muted)}
+.src{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;background:#fff}
+.src.agree{border-left:5px solid #5cb85c}
+.src.dis{border-left:5px solid #d9534f}
+.mini{border-collapse:collapse;font-size:11px;margin-top:6px}
+.mini td,.mini th{border:1px solid #ddd;padding:1px 5px;max-width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mini th{background:#f3f3f3;font-weight:normal;color:#888}
+.mini td.hit{background:#ffe0b2;font-weight:bold;outline:2px solid var(--focus)}
+.evt{font-size:12px;border-left:3px solid var(--line);padding:2px 8px;margin:4px 0}
+/* 아래 막대 */
+.bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:8px 12px;display:flex;gap:8px;align-items:center;margin:12px -16px -16px}
+.pendn{color:var(--pend);font-weight:bold}
+/* 격자 */
+.gridwrap{overflow:auto;max-height:calc(100vh - 330px);border:1px solid var(--line);background:#fff;user-select:none}
+table.grid{border-collapse:collapse;font-size:12px}
+table.grid td,table.grid th{border:1px solid #e1e4e8;padding:2px 6px;white-space:nowrap;min-width:46px;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+table.grid th{background:#f3f5f8;color:#777;font-weight:normal;position:sticky;top:0;z-index:1}
+table.grid td.rh{background:#f3f5f8;color:#777;position:sticky;left:0}
+table.grid td.n{text-align:right}
+table.grid td.on{background:#cfe3ff}
+/* 창 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.box{background:#fff;border-radius:10px;width:min(760px,94vw);max-height:86vh;display:flex;flex-direction:column}
+.box .hd{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:bold}
+.box .bd{padding:10px 16px;overflow:auto;flex:1}
+.box .ft{padding:10px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.fsitem{display:flex;gap:8px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer}
+.fsitem:hover{background:#eef3f9}
+.fsitem.sel{background:#d7e6f7}
+.toast{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:6px}
+.toast div{background:#263238;color:#fff;padding:9px 14px;border-radius:8px;max-width:440px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.toast div.err{background:#b71c1c}
+.legend span{margin-right:10px;white-space:nowrap}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.help li{margin:4px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">숫자지기</div>
+  <div class="meta" id="hdmeta">작업 폴더를 여세요</div>
+  <button onclick="quit()">종료</button>
+</header>
+<nav id="tabs">
+  <button data-p="prep" class="on"><span class="num">1</span>작업 준비</button>
+  <button data-p="check"><span class="num">2</span>검증</button>
+  <button data-p="input"><span class="num">3</span>입력하기</button>
+  <button data-p="hist"><span class="num">4</span>이력</button>
+  <button data-p="conf"><span class="num">5</span>설정·도움말</button>
+</nav>
+<main>
+<!-- 1. 작업 준비 -->
+<section class="page on" id="p-prep">
+  <div class="card" id="demoCard" style="display:none">
+    <h3>시연</h3>
+    <div class="row">
+      <button class="pri" onclick="demoSetup(false)">시연 시작(가상 자료 자동 준비)</button>
+      <button onclick="demoSetup(true)">시연 처음부터 다시</button>
+      <span class="muted small">가상 기관의 원본 엑셀 12개·팀 제출 문서 5개·오류를 심은 취합본으로 바로 시연합니다.</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3><span class="step">1</span>작업 폴더</h3>
+    <div class="row"><span id="wfolder" class="path muted">열린 작업 폴더 없음</span></div>
+    <div class="row" style="margin-top:8px">
+      <button onclick="pickWork()">작업 폴더 열기·만들기</button>
+      <select id="recent" onchange="if(this.value)openWork(this.value)"><option value="">최근 작업…</option></select>
+    </div>
+    <div class="muted small" style="margin-top:6px">작업 폴더에는 이력 장부(숫자지기작업.db), 작업본(문서 버전), 내보내기 파일이 저장됩니다. 원본 파일은 수정하지 않습니다.</div>
+  </div>
+  <div class="card">
+    <h3><span class="step">2</span>검증할 한글 문서(hwpx)</h3>
+    <div id="target" class="muted">선택한 문서 없음</div>
+    <div class="row" style="margin-top:8px"><button onclick="pickTarget()" id="btnTarget">문서 선택</button>
+      <span class="muted small">선택하면 숫자마다 누름틀(이름표 붙은 칸)을 씌운 <b>작업본 v001</b>을 만듭니다.</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="step">3</span>원본 자료(엑셀·팀 제출 hwpx)</h3>
+    <div class="row" style="margin-bottom:8px">
+      <button onclick="pickSources(true)">폴더째 추가</button>
+      <button onclick="pickSources(false)">파일 추가</button>
+      <button onclick="checkSources()">원본 변경 확인</button>
+      <span class="muted small" id="srcCount"></span>
+    </div>
+    <div style="max-height:340px;overflow:auto"><table class="list" id="srcTable"></table></div>
+  </div>
+  <div class="row"><button class="pri" style="font-size:15px;padding:9px 22px" onclick="runVerify(true)">검증 실행 →</button></div>
+</section>
+
+<!-- 2. 검증 -->
+<section class="page" id="p-check" style="padding:0">
+  <div class="split">
+    <div class="left" id="checkLeft">
+      <div id="banners"></div>
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-bottom:10px">
+        <button onclick="runVerify(false)">다시 검증</button>
+        <button onclick="nextIssue(1)">다음 문제 ▶</button>
+        <label class="small"><input type="checkbox" id="dimOk" onchange="toggleDim()"> 일치한 칸 색 숨기기</label>
+        <span class="legend small muted" id="legend"></span>
+      </div>
+      <div id="docView" class="doc"><div class="empty">검증을 실행하세요</div></div>
+    </div>
+    <div class="right">
+      <div id="detail" class="detail"><div class="empty">문서에서 숫자를 누르면<br>출처와 이력이 여기에 나옵니다.</div></div>
+      <div class="bar">
+        <span>대기 중 변경 <span class="pendn" id="pendN">0</span>건</span>
+        <button class="pri" onclick="saveVersion()">저장(새 버전)</button>
+        <button onclick="dropAll()">변경 취소</button>
+        <button onclick="doExport()">내보내기</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 입력하기 -->
+<section class="page" id="p-input" style="padding:0">
+  <div class="split">
+    <div class="left">
+      <div class="banner">① 아래 문서에서 <b>넣을 칸</b>을 누르고 ② 오른쪽 원본에서 셀을 끌어 고른 뒤 ③ <b>[입력하기]</b>를 누르세요. 여러 셀을 고르면 같은 모양으로 차례대로 채웁니다.</div>
+      <div class="row" style="margin-bottom:8px">넣을 칸: <b id="inTarget" class="path">없음</b></div>
+      <div id="docView2" class="doc"></div>
+    </div>
+    <div class="right">
+      <div class="row" style="margin-bottom:6px">
+        <select id="inSrc" onchange="loadSheets()"></select>
+        <select id="inSheet" onchange="loadGrid()"></select>
+      </div>
+      <div class="row small" style="margin-bottom:6px">
+        자릿수 <select id="inDec"><option value="">원본 표시대로</option><option>0</option><option>1</option><option>2</option><option>3</option></select>
+        배율 <select id="inScale"><option value="1">그대로</option><option value="0.001">÷1,000 (원→천원)</option><option value="0.000001">÷1,000,000</option><option value="100">×100 (비율→%)</option></select>
+        <label><input type="checkbox" id="inComma" checked> 천 단위 쉼표</label>
+      </div>
+      <div class="row small muted" style="margin-bottom:6px">고른 셀: <b id="inSel">없음</b></div>
+      <div class="gridwrap" id="gridWrap"><div class="empty">원본을 고르세요</div></div>
+      <div class="bar">
+        <button class="pri" onclick="doInput()">입력하기</button>
+        <span>대기 중 <span class="pendn" id="pendN2">0</span>건</span>
+        <button onclick="saveVersion()">저장(새 버전)</button>
+        <button onclick="dropAll()">변경 취소</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 이력 -->
+<section class="page" id="p-hist">
+  <div class="card">
+    <h3>값 이력 <span class="muted small">(값이 바뀔 때마다 한 줄씩 쌓입니다. 지우지 않습니다)</span></h3>
+    <div class="row" style="margin-bottom:6px"><input id="hq" placeholder="칸 이름·위치·출처로 찾기" oninput="renderHist()" style="width:280px">
+      <label class="small"><input type="checkbox" id="hHideInit" checked onchange="renderHist()"> '작업본 생성' 줄 숨기기</label>
+      <button onclick="loadHist()">새로고침</button></div>
+    <div style="max-height:380px;overflow:auto"><table class="list" id="histT"></table></div>
+  </div>
+  <div class="card"><h3>작업본 버전</h3><table class="list" id="verT"></table></div>
+  <div class="card"><h3>원본 변경 기록</h3><div style="max-height:240px;overflow:auto"><table class="list" id="srcEvT"></table></div></div>
+  <div class="card"><h3>검증 기록</h3><div style="max-height:240px;overflow:auto"><table class="list" id="runT"></table></div></div>
+</section>
+
+<!-- 5. 설정·도움말 -->
+<section class="page" id="p-conf">
+  <div class="card"><h3>작업자</h3>
+    <div class="row"><input id="uname" placeholder="이름"><button onclick="setUser()">저장</button>
+    <span class="muted small">이력에 '작업자'로 기록됩니다.</span></div></div>
+  <div class="card"><h3>복사 순간 출처 기록 (Windows)</h3>
+    <div class="row"><button id="clipBtn" onclick="toggleClip()">켜기</button><span id="clipSt" class="muted small"></span></div>
+    <div class="muted small" style="margin-top:6px">켜 두면 엑셀에서 Ctrl+C로 복사할 때마다 <b>파일 경로·시트·칸</b>을 기록합니다. 한글에 붙여 넣은 숫자는 검증할 때 이 기록과 맞춰 출처로 표시됩니다. 엑셀에서 복사한 것만 기록하며, 기록은 이 PC의 작업 폴더에만 저장됩니다.</div>
+    <div style="max-height:220px;overflow:auto;margin-top:8px"><table class="list" id="clipT"></table></div>
+  </div>
+  <div class="card help"><h3>사용 순서</h3>
+    <ol>
+      <li><b>작업 준비</b>: 작업 폴더를 열고, 검증할 hwpx와 원본(엑셀·팀 제출 hwpx)을 등록합니다.</li>
+      <li><b>검증</b>: 숫자마다 색이 칠해집니다. 숫자를 누르면 어느 파일 어느 칸에서 왔는지, 원본 값이 무엇인지 보입니다.</li>
+      <li>틀린 칸은 <b>[이 값으로 고치기]</b>, 출처가 여러 곳이면 맞는 출처를 골라 <b>[이 출처로 확정]</b>합니다.</li>
+      <li><b>입력하기</b>: 빈 칸·고칠 칸을 누르고 원본 셀을 끌어 고른 뒤 [입력하기] → 값과 출처가 함께 기록됩니다.</li>
+      <li><b>저장(새 버전)</b>: 작업본 v002, v003…이 만들어지고 바뀐 칸이 모두 이력에 남습니다.</li>
+      <li><b>내보내기</b>: 출처대장(xlsx), 검증표시본(hwpx, 틀린 칸 빨강·확인 필요 노랑), 검증보고(html).</li>
+    </ol>
+    <h3>색의 뜻</h3>
+    <div class="legend" id="legend2"></div>
+    <h3 style="margin-top:12px">알아 둘 점</h3>
+    <ul class="small">
+      <li>'일치'는 원본 값을 문서의 표시 자릿수로 반올림했을 때 같다는 뜻입니다(예: 2.338 → 2.3).</li>
+      <li>여러 칸을 더한 값처럼 원본에 그대로 없는 숫자는 '출처 미확인'으로 표시됩니다. 틀렸다는 뜻이 아닙니다.</li>
+      <li>작업본은 한글에서 열어 직접 고쳐도 됩니다. 다시 검증하면 바뀐 칸이 '한글에서 직접 수정'으로 이력에 남습니다.</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="fsModal"><div class="box">
+  <div class="hd" id="fsTitle">선택</div>
+  <div class="bd">
+    <div class="row" style="margin-bottom:6px"><button class="sm" onclick="fsUp()">▲ 위로</button><button class="sm" onclick="fsGo('')">처음</button>
+      <input id="fsPath" style="flex:1" onkeydown="if(event.key==='Enter')fsGo(this.value)"></div>
+    <div id="fsList"></div>
+  </div>
+  <div class="ft"><span class="muted small" id="fsHint" style="flex:1"></span>
+    <button id="fsNew" onclick="fsMkdir()">새 폴더</button>
+    <button onclick="closeModal()">닫기</button><button class="pri" id="fsOk" onclick="fsOk()">선택</button></div>
+</div></div>
+<div class="modal" id="askModal"><div class="box" style="width:min(480px,94vw)">
+  <div class="hd" id="askT"></div><div class="bd" id="askB"></div>
+  <div class="ft"><button onclick="askDone(false)">취소</button><button class="pri" onclick="askDone(true)">확인</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+<div class="modal" id="busy" style="cursor:wait;background:rgba(255,255,255,.35)"><div class="box" style="width:auto;padding:16px 26px;font-weight:bold">처리 중입니다…</div></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S={state:null,work:null,view:null,sel:null,filter:"all",hist:null,inTarget:null,grid:null,gsel:null,status:{}};
+const REL={match:"일치",round:"반올림 일치",scale:"단위 환산 일치",unit:"단위 다름",mismatch:"불일치"};
+const BAD=["mismatch","unit","calc"], WARN=["conflict","unknown","multi"];
+
+let BUSY=0, busyT=null;
+function busy(d){BUSY+=d; clearTimeout(busyT);
+  if(BUSY>0) busyT=setTimeout(()=>$("#busy").classList.add("on"),250); else $("#busy").classList.remove("on");}
+async function api(p,body){
+  const o=body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json","X-Numjigi":"1"},body:JSON.stringify(body)};
+  let r; const post=body!==undefined;
+  if(post) busy(1);
+  try{ r=await fetch(p,o);}catch(e){ if(post)busy(-1); toast("프로그램과 연결이 끊겼습니다. 검은 창이 켜져 있는지 확인하세요",true); throw e;}
+  if(post) busy(-1);
+  const j=await r.json().catch(()=>({error:"응답 오류"}));
+  if(!r.ok||j.error){ toast(j.error||"오류",true); throw new Error(j.error);}
+  return j;
+}
+function toast(m,err){const d=document.createElement("div");d.textContent=m;if(err)d.className="err";$("#toast").appendChild(d);setTimeout(()=>d.remove(),err?6000:3200);}
+let askCb=null;
+function ask(t,html){return new Promise(res=>{$("#askT").textContent=t;$("#askB").innerHTML=html;askCb=res;$("#askModal").classList.add("on");});}
+function askDone(v){$("#askModal").classList.remove("on");if(askCb){const f=askCb;askCb=null;f(v);}}
+
+/* 탭 */
+$$("#tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.p));
+function showTab(p){
+  $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  $$(".page").forEach(x=>x.classList.toggle("on",x.id==="p-"+p));
+  if(p==="check"&&S.work&&S.work.version&&!S.view) runVerify(false);
+  if(p==="check"&&S.view&&S.view.blocks) renderDoc();
+  if(p==="input") enterInput();
+  if(p==="hist") loadHist();
+  if(p==="conf") loadConf();
+}
+
+/* 상태 */
+async function refresh(){
+  const j=await api("/api/state"); S.state=j; S.work=j.work; S.status=j.status_names;
+  $("#demoCard").style.display=j.demo?"":"none";
+  $("#recent").innerHTML='<option value="">최근 작업…</option>'+(j.recent||[]).map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join("");
+  renderPrep(); renderLegend(); updPend();
+}
+function renderLegend(){
+  const items=[["ok","일치"],["ok_user","확정"],["single","값 일치(위치 추정)"],["conflict","출처 간 충돌"],["unknown","출처 미확인"],["mismatch","불일치·단위 다름·계산 오류"],["empty","빈 칸"]];
+  const h=items.map(([k,t])=>`<span><span class="num st-${k}">&nbsp;12&nbsp;</span> ${t}</span>`).join("")+`<span><span class="num pend"><span class="new">&nbsp;12&nbsp;</span></span> 저장 전 변경</span>`;
+  $("#legend").innerHTML=h; $("#legend2").innerHTML=h;
+}
+function renderPrep(){
+  const w=S.work;
+  $("#hdmeta").textContent=w?`작업 폴더: ${w.folder}  ·  문서: ${w.target_name||"-"}  ·  작업본 ${w.version?"v"+String(w.version.ver).padStart(3,"0"):"-"}  ·  작업자: ${w.user}`:"작업 폴더를 여세요";
+  $("#wfolder").textContent=w?w.folder:"열린 작업 폴더 없음";
+  $("#target").innerHTML=w&&w.target?`<div><b>${esc(w.target_name)}</b></div><div class="path muted">${esc(w.target)}</div><div class="small">작업본: <span class="path">${esc(w.version.path)}</span></div>`:'<span class="muted">선택한 문서 없음</span>';
+  $("#btnTarget").disabled=!w||!!(w&&w.version);
+  const srcs=w?w.sources:[];
+  $("#srcCount").textContent=srcs.length?`${srcs.length}개 등록 · 기준 폴더: ${w.base_folder||"-"}`:"";
+  if(!srcs.length){$("#srcTable").innerHTML='<tr><td class="muted">등록한 원본이 없습니다</td></tr>';return;}
+  const base=w.base_folder||"";
+  $("#srcTable").innerHTML="<tr><th>번호</th><th>파일</th><th>위치(기준 폴더 아래)</th><th>구분</th><th>시트·표</th><th>상태</th><th></th></tr>"+
+   srcs.map(s=>{
+     const rel=s.path.startsWith(base)?s.path.slice(base.length).replace(/^[\\/]/,""):s.path;
+     const st=!s.exists?'<span class="badge" style="background:var(--bad)">파일 없음</span>':s.error&&s.status==="fail"?`<span class="badge" style="background:var(--bad)" title="${esc(s.error)}">읽기 실패</span>`:s.error?`<span class="badge" style="background:var(--warn)" title="${esc(s.error)}">주의</span>`:'<span class="badge" style="background:var(--ok)">정상</span>';
+     return `<tr><td>${s.sid}</td><td>${esc(s.name)}</td><td class="path muted">${esc(rel)}</td>
+     <td><select onchange="setRole('${s.sid}',this.value)"><option ${s.role==="원본"?"selected":""}>원본</option><option ${s.role==="팀제출"?"selected":""}>팀제출</option><option ${s.role==="기타"?"selected":""}>기타</option></select></td>
+     <td>${s.sheets.length}</td><td>${st}</td><td><button class="sm" onclick="removeSrc('${s.sid}')">빼기</button></td></tr>`;}).join("");
+}
+async function setRole(sid,role){S.work=await api("/api/sources/role",{sid,role});}
+async function removeSrc(sid){if(!await ask("원본 빼기","이 원본을 대조 목록에서 뺍니다. (파일은 지우지 않습니다)"))return;S.work=await api("/api/sources/remove",{sid});renderPrep();}
+async function openWork(f){S.work=await api("/api/work/open",{folder:f});S.view=null;await refresh();toast("작업 폴더를 열었습니다");}
+async function demoSetup(reset){
+  if(reset&&!await ask("시연 처음부터","시연용 작업 폴더(작업(시연))의 이력·작업본을 지우고 처음 상태로 되돌립니다."))return;
+  toast("시연 자료를 준비합니다…");S.work=await api("/api/demo/setup",{reset});S.view=null;await refresh();toast("준비 완료: 원본 "+S.work.sources.length+"개");
+}
+async function checkSources(){
+  const r=await api("/api/sources/check",{});
+  if(!r.changed.length&&!r.missing.length){toast("바뀐 원본이 없습니다");return;}
+  S.srcChange=r; await refresh();
+  let h=r.changed.map(c=>`<p><b>${esc(c.name)}</b> 내용이 바뀌었습니다.<br><span class="small muted">이 파일을 출처로 쓰는 칸 ${c.affected.length}개</span></p>`).join("")+
+        r.missing.map(m=>`<p><b>${esc(m.name)}</b> 파일이 없습니다(이동·삭제).</p>`).join("");
+  if(await ask("원본 변경 감지",h+"<p>지금 다시 검증할까요? 바뀐 칸만 따로 보여 드립니다.</p>")) {showTab("check");runVerify(false);}
+}
+
+/* 파일 고르기 창 */
+let FS={mode:"dir",path:"",sel:new Set(),multi:false,ext:null,cb:null};
+function openFs(title,mode,cb,opt={}){FS={mode,path:"",sel:new Set(),multi:!!opt.multi,ext:opt.ext||null,cb,allowDir:!!opt.allowDir};
+  $("#fsTitle").textContent=title;$("#fsNew").style.display=mode==="dir"?"":"none";
+  $("#fsHint").textContent=mode==="dir"?(FS.multi?"폴더를 눌러 고르거나(여러 개, 두 번 누르면 들어감) 고르지 않고 [선택]하면 지금 폴더 전체":"폴더 안으로 들어간 뒤 [선택]"):"파일을 누르고 [선택]"+(FS.multi?" (여러 개 가능)":"");
+  $("#fsModal").classList.add("on");fsGo(opt.start||"");}
+function closeModal(){$("#fsModal").classList.remove("on");}
+async function fsGo(p){const j=await api("/api/fs?path="+encodeURIComponent(p));FS.path=j.path;FS.parent=j.parent;$("#fsPath").value=j.path;
+  $("#fsList").innerHTML=j.entries.map((e,i)=>{const ok=e.dir||!FS.ext||FS.ext.some(x=>e.name.toLowerCase().endsWith(x));
+    if(!ok)return"";return `<div class="fsitem" data-i="${i}" data-p="${esc(e.path)}" data-d="${e.dir?1:0}">${e.dir?"📁":(e.name.endsWith(".xlsx")?"📊":"📄")} <span>${esc(e.name)}</span></div>`}).join("")||'<div class="muted">비어 있음</div>';
+  $$("#fsList .fsitem").forEach(el=>{el.onclick=()=>{const p=el.dataset.p;
+     if(el.dataset.d==="1"&&!(FS.allowDir&&FS.multi)){fsGo(p);return;}
+     if(el.dataset.d==="1"&&FS.allowDir&&FS.multi){ if(FS.sel.has(p))FS.sel.delete(p);else FS.sel.add(p); el.classList.toggle("sel");return;}
+     if(!FS.multi){FS.sel=new Set([p]);$$("#fsList .fsitem").forEach(x=>x.classList.remove("sel"));}
+     else if(FS.sel.has(p))FS.sel.delete(p);else FS.sel.add(p);
+     el.classList.toggle("sel",FS.sel.has(p));};
+   el.ondblclick=()=>{if(el.dataset.d==="1")fsGo(el.dataset.p);};});}
+function fsUp(){if(FS.parent!==null)fsGo(FS.parent||"");}
+async function fsMkdir(){const n=prompt("새 폴더 이름");if(!n||!FS.path)return;const j=await api("/api/fs/mkdir",{path:FS.path+(FS.path.endsWith("/")||FS.path.endsWith("\\")?"":(FS.path.includes("\\")?"\\":"/"))+n});fsGo(j.path);}
+function fsOk(){let v;if(FS.mode==="dir"){ if(FS.multi&&FS.sel.size)v=[...FS.sel]; else v=FS.path; if(!v||!v.length){toast("폴더를 고르세요",true);return;} }
+  else {v=[...FS.sel];if(!v.length){toast("파일을 고르세요",true);return;} if(!FS.multi)v=v[0];}
+  closeModal();FS.cb(v);}
+function pickWork(){openFs("작업 폴더 열기·만들기","dir",openWork);}
+function pickTarget(){if(!S.work){toast("먼저 작업 폴더를 여세요",true);return;}
+  openFs("검증할 한글 문서(hwpx) 선택","file",async p=>{toast("작업본을 만드는 중…");const r=await api("/api/target",{path:p});S.work=r.state;renderPrep();toast(`작업본 v001 생성: 숫자 칸 ${r.items}개`);},{ext:[".hwpx"]});}
+function pickSources(folder){if(!S.work){toast("먼저 작업 폴더를 여세요",true);return;}
+  if(folder) openFs("원본 폴더 추가(폴더 안의 xlsx·hwpx 모두)","dir",async p=>addSrc(Array.isArray(p)?p:[p]),{multi:true,allowDir:true});
+  else openFs("원본 파일 추가","file",async p=>addSrc(p),{multi:true,ext:[".xlsx",".xlsm",".hwpx"]});}
+async function addSrc(paths){toast("원본을 읽는 중…");const r=await api("/api/sources/add",{paths});S.work=r.state;renderPrep();
+  toast(`추가 ${r.added.length}개`+(r.skipped.length?` · 건너뜀 ${r.skipped.length}개`:"")+(r.failed.length?` · 실패 ${r.failed.length}개`:""),r.failed.length>0);}
+
+/* 검증 */
+async function runVerify(go){
+  if(!S.work||!S.work.version){toast("문서와 원본을 먼저 등록하세요",true);return;}
+  if(S.busy)return; S.busy=true;
+  try{
+  if(go){S.view=S.view||{pending:true};showTab("check");}
+  $("#docView").innerHTML='<div class="empty">검증 중…</div>';
+  S.view=await api("/api/verify",{}); renderAll(); await refresh();
+  }finally{S.busy=false;}
+  const sm=S.view.summary; toast(`검증 완료: ${sm.total}칸`+(sm.changed?` · 직전 대비 바뀐 칸 ${sm.changed}개`:""));
+}
+function cnt(...ks){const sm=S.view.summary||{};return ks.reduce((a,k)=>a+(sm[k]||0),0);}
+function renderAll(){renderChips();renderBanners();renderDoc();updPend();if(S.sel)showDetail(S.sel);}
+function renderChips(){
+  const c=[["all","전체",S.view.summary.total],["bad","불일치·오류",cnt("mismatch","unit","calc")+(S.view.text_issues||[]).length],["warn","확인 필요",cnt("conflict","unknown","multi")],["ok","일치",cnt("ok","ok_calc","ok_user","single")]];
+  $("#chips").innerHTML=c.map(([k,t,n])=>`<div class="chip ${S.filter===k?"on":""}" onclick="setFilter('${k}')" style="${k==="bad"?"background:var(--bad)":k==="warn"?"background:var(--warn)":k==="ok"?"background:var(--ok)":""}">${t}<b>${n}</b></div>`).join("");
+}
+function setFilter(k){S.filter=k;renderChips();renderDoc();}
+function renderBanners(){
+  let h="";
+  const ch=S.view.changed||[];
+  if(ch.length) h+=`<div class="banner red"><b>직전 검증 대비 상태가 바뀐 칸 ${ch.length}개</b> (원본 변경·수정 반영)<br>`+ch.map(c=>`<a href="#" onclick="pick('${esc(c.key)}');return false">${esc(c.label)}</a>: ${esc(c.before_text)} → <b>${esc(c.after_text)}</b>`).join("<br>")+"</div>";
+  const ed=S.view.edits||[];
+  if(ed.length) h+=`<div class="banner"><b>한글에서 직접 고친 칸 ${ed.length}개</b>를 이력에 기록했습니다.<br>`+ed.slice(0,8).map(e=>`${esc(e.label)}: ${esc(e.old)} → ${esc(e.new)}`).join("<br>")+"</div>";
+  const ti=S.view.text_issues||[];
+  if(ti.length) h+=`<div class="banner red"><b>날짜·요일 오류 ${ti.length}건</b><br>`+ti.map(t=>`${esc(t.raw)} — ${esc(t.msg)}`).join("<br>")+"</div>";
+  $("#banners").innerHTML=h;
+}
+function vis(st){ if(S.filter==="all")return true; if(S.filter==="bad")return BAD.includes(st); if(S.filter==="warn")return WARN.includes(st); if(S.filter==="ok")return ["ok","ok_calc","ok_user","single"].includes(st); return true;}
+function numSpan(it,mode){
+  const st=it.status||"none"; let inner=esc(it.raw||"");
+  if(it.pending!==undefined&&it.pending!==null) inner=(it.raw?`<span class="old">${esc(it.raw)}</span>`:"")+`<span class="new">${esc(it.pending)||"(빈 칸)"}</span>`;
+  else if(!it.raw) inner="&nbsp;";
+  const faded=mode==="check"&&!vis(st)?' style="opacity:.25"':"";
+  const tip=esc(it.label+" · "+(it.status_text||""));
+  return `<span class="num st-${st} ${it.pending!=null?"pend":""} ${(mode==="check"?S.sel:S.inTarget)===it.key?"sel":""}" data-k="${esc(it.key)}" title="${tip}"${faded}>${inner}</span>`;
+}
+function renderDocInto(el,mode){
+  const v=S.view; if(!v){el.innerHTML='<div class="empty">검증을 먼저 실행하세요</div>';return;}
+  const ti=v.text_issues||[]; let h="";
+  for(const b of v.blocks){
+    if(b.type==="p"){
+      let inner=b.pieces.map(p=>p.item?numSpan(v.items[p.item],mode):esc(p.text)).join("");
+      for(const t of ti) if(t.para===b.para) inner=inner.replace(esc(t.raw),`<span class="texterr" title="${esc(t.msg)}">${esc(t.raw)}</span>`);
+      h+=`<p class="${b.style}">${inner}</p>`;
+    } else {
+      const tm=(v.tables||{})[String(b.ti)]||[];
+      h+=`<div class="ttl">표${b.ti+1}`+(tm.length?" · 대조된 원본: "+tm.map(m=>esc(m.name)+" "+esc(m.sheet)+(m.orient==="T"?"(행·열 뒤바뀜)":"")).join(", "):" · 대조된 원본 블록 없음")+`</div><table>`;
+      for(const row of b.rows){h+="<tr>";for(const c of row){
+        const inner=c.pieces.map(p=>p.item?numSpan(v.items[p.item],mode):esc(p.text)).join("")||"&nbsp;";
+        h+=`<td class="${c.head?"h":""}" ${c.rs>1?`rowspan="${c.rs}"`:""} ${c.cs>1?`colspan="${c.cs}"`:""}>${inner}</td>`;}h+="</tr>";}
+      h+="</table>";
+    }
+  }
+  el.innerHTML=h;
+  el.querySelectorAll(".num").forEach(s=>s.onclick=()=>mode==="check"?pick(s.dataset.k):pickTarget2(s.dataset.k));
+}
+function renderDoc(){renderDocInto($("#docView"),"check");}
+function toggleDim(){$("#docView").classList.toggle("dim",$("#dimOk").checked);}
+function issueKeys(){const v=S.view;return v.blocks.flatMap(b=>b.type==="p"?b.pieces.filter(p=>p.item).map(p=>p.item):b.rows.flat().flatMap(c=>c.pieces.filter(p=>p.item).map(p=>p.item))).filter(k=>{const s=v.items[k].status;return BAD.includes(s)||WARN.includes(s);});}
+function nextIssue(d){const ks=issueKeys();if(!ks.length){toast("확인할 칸이 없습니다");return;}let i=ks.indexOf(S.sel);i=(i+d+ks.length)%ks.length;pick(ks[i]);}
+async function pick(k){S.sel=k;$$("#docView .num").forEach(x=>x.classList.toggle("sel",x.dataset.k===k));
+  const el=$(`#docView .num[data-k="${CSS.escape(k)}"]`); if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
+  showDetail(k);}
+async function showDetail(k){
+  const d=await api("/api/slot?key="+encodeURIComponent(k)); const it=d.item, r=d.result||{};
+  const st=r.status||"none", stt=(S.status[st]||[st])[0];
+  let h=`<h4>${esc(it.label)}</h4><div class="kv"><div>칸 이름</div><div class="path">${esc(it.key)}</div>
+   <div>문서 값</div><div><b style="font-size:16px">${esc(it.raw||"(빈 칸)")}</b> ${it.unit?esc(it.unit):""}</div>
+   <div>상태</div><div><span class="badge st-${st}">${esc(stt)}</span></div>`;
+  if(r.fix) h+=`<div>고칠 값</div><div><b>${esc(r.fix)}</b></div>`;
+  if(r.calc) h+=`<div>계산</div><div>${r.calc.ok?"✔":"✘"} ${esc(r.calc.msg)}</div>`;
+  if(d.confirmed) h+=`<div>확정</div><div>${esc(d.confirmed.user)} · ${esc(d.confirmed.ts)}<br><span class="path">${esc(d.confirmed.source_path)}</span> · ${esc(d.confirmed.source_ref)} <button class="sm" onclick="unconfirm('${esc(k)}')">확정 취소</button></div>`;
+  if(d.pending) h+=`<div>저장 전</div><div class="pendn">${esc(d.pending.old)} → ${esc(d.pending.new)} (${esc(d.pending.method)}) <button class="sm" onclick="dropOne('${esc(k)}')">취소</button></div>`;
+  h+=`</div>`;
+  if(it.context&&it.kind==="para") h+=`<div class="small muted" style="margin-bottom:6px">문장: ${esc(it.context)}</div>`;
+  if(d.sources.length){
+    const title=(r.status==="unknown"||r.status==="single"||r.status==="multi")&&!d.sources.some(s=>s.relation==="mismatch")?"같은 값이 있는 원본 칸":"대조한 원본";
+    h+=`<div style="margin-top:6px"><b>${title}</b></div>`;
+    for(const s of d.sources){
+      const ag=["match","round","scale"].includes(s.relation);
+      h+=`<div class="src ${ag?"agree":"dis"}"><div><b>${esc(s.source)}</b> <span class="badge">${esc(s.role)}</span> · <span class="path">${esc(s.ref)}</span></div>
+       <div class="small path muted">${esc(s.path||"")}</div>
+       <div>원본 값 <b>${esc(s.source_text)}</b>${s.scale!==1?` ${esc(s.scale_label)} → ${esc(s.expected_text)}`:""} · <span class="badge" style="background:${ag?"var(--ok)":"var(--bad)"}">${esc(REL[s.relation]||s.relation)}</span></div>`;
+      if(s.preview) h+=miniGrid(s.preview);
+      h+=`<div class="row" style="margin-top:6px">`;
+      if(ag) h+=`<button class="sm" onclick='confirmSrc(${JSON.stringify(k)},${JSON.stringify(s.sid)},${JSON.stringify(s.ref)})'>이 출처로 확정</button>`;
+      else h+=`<button class="sm pri" onclick='fixFrom(${JSON.stringify(k)},${JSON.stringify(s.sid)},${JSON.stringify(s.ref)},${JSON.stringify(s.expected_text)})'>이 값(${esc(s.expected_text)})으로 고치기</button>`;
+      h+=`</div></div>`;
+    }
+  } else if(it.value!==null) h+=`<div class="banner">이 숫자와 같은 값을 등록한 원본에서 찾지 못했습니다. 계산한 값이면 계산 근거를 확인하고, 원본이 따로 있으면 [입력하기]로 출처를 붙이세요.</div>`;
+  if(d.clips&&d.clips.length) h+=`<div class="src agree"><b>복사 기록</b>`+d.clips.map(c=>`<div class="small">${esc(c.at)} · ${esc(c.path)} · ${esc(c.sheet)}!${esc(c.ref)} = ${esc(c.text)}</div>`).join("")+`</div>`;
+  if(it.editable) h+=`<div style="margin-top:10px"><b>직접 고치기</b><div class="row" style="margin-top:4px"><input id="manV" value="${esc(it.raw||"")}" style="width:120px"><input id="manR" placeholder="사유(선택)" style="flex:1"><button class="sm" onclick='manual(${JSON.stringify(k)})'>대기 목록에 올리기</button></div></div>`;
+  else h+=`<div class="small muted" style="margin-top:8px">이 숫자는 문서 구조상 프로그램에서 직접 고칠 수 없습니다. 한글에서 고친 뒤 다시 검증하세요.</div>`;
+  h+=`<div style="margin-top:12px"><b>이 칸 이력</b>`+(d.events.map(e=>`<div class="evt"><b>${esc(e.method)}</b> · v${String(e.ver||0).padStart(3,"0")} · ${esc(e.ts)} · ${esc(e.user||"")}<br>${esc(e.old??"")} → <b>${esc(e.new??"")}</b>${e.source_ref?` · ${esc((e.source_path||"").split(/[\\/]/).pop())} ${esc(e.source_ref)}`:""}${e.reason?` · ${esc(e.reason)}`:""}</div>`).join("")||'<div class="muted small">없음</div>')+`</div>`;
+  $("#detail").innerHTML=h;
+}
+function miniGrid(p){
+  let h=`<table class="mini"><tr><th></th>${p.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>`;
+  p.grid.forEach((row,i)=>{h+=`<tr><th>${p.r0+i+1}</th>`+row.map((t,j)=>`<td class="${i===p.hit[0]&&j===p.hit[1]?"hit":""}" title="${esc(t)}">${esc(t)}</td>`).join("")+"</tr>";});
+  return h+"</table>";
+}
+async function confirmSrc(k,sid,ref){await api("/api/confirm",{slot:k,sid,ref});toast("출처를 확정했습니다");await reloadView();showDetail(k);}
+async function unconfirm(k){await api("/api/unconfirm",{slot:k});toast("확정을 취소했습니다(다시 검증하면 반영)");showDetail(k);}
+async function fixFrom(k,sid,ref,val){await api("/api/fix",{slot:k,sid,ref,value:val});toast(`대기 목록: ${val} (저장하면 반영)`);await reloadView();showDetail(k);}
+async function manual(k){const v=$("#manV").value.trim(),r=$("#manR").value.trim();await api("/api/pending",{slot:k,value:v,method:"직접 입력",reason:r});toast("대기 목록에 올렸습니다");await reloadView();showDetail(k);}
+async function dropOne(k){await api("/api/pending/drop",{slot:k});await reloadView();showDetail(k);}
+async function dropAll(){if(!await ask("변경 취소","저장하지 않은 변경을 모두 취소합니다."))return;await api("/api/pending/drop",{});await reloadView();}
+async function reloadView(){S.view=await api("/api/view");await refresh();renderAll();if($("#p-input").classList.contains("on"))renderDocInto($("#docView2"),"input");}
+function updPend(){const n=S.work?S.work.pending.length:0;$("#pendN").textContent=n;$("#pendN2").textContent=n;}
+async function saveVersion(){
+  const P=S.work?S.work.pending:[]; if(!P.length){toast("저장할 변경이 없습니다",true);return;}
+  const list=P.map(p=>`<div class="small">${esc(p.label)}: ${esc(p.old??"")} → <b>${esc(p.new)}</b> <span class="muted">(${esc(p.method)})</span></div>`).join("");
+  if(!await ask(`새 버전으로 저장 (${P.length}칸)`,list+`<p><input id="vnote" placeholder="메모(선택)" style="width:100%"></p>`))return;
+  const note=($("#vnote")||{}).value||"";
+  const r=await api("/api/save",{note}); toast(`작업본 v${String(r.ver).padStart(3,"0")} 저장 (${r.count}칸)`);
+  S.view=await api("/api/verify",{}); await refresh(); renderAll(); if($("#p-input").classList.contains("on"))renderDocInto($("#docView2"),"input");
+}
+async function doExport(){
+  toast("내보내는 중…"); const r=await api("/api/export",{});
+  const f=(p,t)=>`<div style="margin:6px 0"><b>${t}</b><br><span class="path small">${esc(p)}</span> <button class="sm" onclick='api("/api/open",{path:${JSON.stringify(p)}})'>열기</button></div>`;
+  await ask("내보내기 완료",f(r.ledger,"출처대장(xlsx)")+f(r.marked,`검증표시본(hwpx, 표시 ${r.marked_count}칸)`)+f(r.report,"검증보고(html, 인쇄용)")+
+    `<div style="margin-top:8px"><button class="sm" onclick='api("/api/open",{path:${JSON.stringify(r.ledger.replace(/[\\/][^\\/]*$/,""))}})'>내보내기 폴더 열기</button></div>`);
+}
+
+/* 입력하기 */
+async function enterInput(){
+  if(!S.work||!S.work.version){$("#docView2").innerHTML='<div class="empty">문서를 먼저 선택하세요</div>';return;}
+  if(!S.view||!S.view.blocks) S.view=await api("/api/view");
+  renderDocInto($("#docView2"),"input");
+  const srcs=S.work.sources; const cur=$("#inSrc").value;
+  $("#inSrc").innerHTML=srcs.map(s=>`<option value="${s.sid}">${s.sid} · ${esc(s.name)}</option>`).join("");
+  if(cur&&srcs.some(s=>s.sid===cur))$("#inSrc").value=cur;
+  if(srcs.length) loadSheets(true);
+}
+function pickTarget2(k){S.inTarget=k;$("#inTarget").textContent=S.view.items[k].label+"  ("+k+")";
+  $$("#docView2 .num").forEach(x=>x.classList.toggle("sel",x.dataset.k===k));}
+function loadSheets(keep){const s=S.work.sources.find(x=>x.sid===$("#inSrc").value);if(!s)return;const cur=$("#inSheet").value;
+  $("#inSheet").innerHTML=s.sheets.map(n=>`<option>${esc(n)}</option>`).join("");if(keep&&s.sheets.includes(cur))$("#inSheet").value=cur;loadGrid();}
+async function loadGrid(){
+  const sid=$("#inSrc").value,sh=$("#inSheet").value; if(!sid)return;
+  const g=await api(`/api/grid?sid=${encodeURIComponent(sid)}&sheet=${encodeURIComponent(sh)}&nr=200&nc=40`); S.grid=g; S.gsel=null; $("#inSel").textContent="없음";
+  let h=`<table class="grid"><tr><th></th>${g.cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>`;
+  g.rows.forEach((row,i)=>{h+=`<tr><td class="rh">${g.r0+i+1}</td>`+row.map((c,j)=>`<td data-r="${g.r0+i}" data-c="${g.c0+j}" class="${c.n?"n":""}" title="${esc(c.t)}">${esc(c.t)}</td>`).join("")+"</tr>";});
+  $("#gridWrap").innerHTML=h+"</table>"+(g.maxr>=g.r0+200?'<div class="small muted" style="padding:6px">앞 200행까지 표시</div>':"");
+  let down=null;
+  $$("#gridWrap td[data-r]").forEach(td=>{
+    td.onmousedown=e=>{down=[+td.dataset.r,+td.dataset.c];setGsel(down,down);e.preventDefault();};
+    td.onmouseover=()=>{if(down)setGsel(down,[+td.dataset.r,+td.dataset.c]);};
+  });
+  document.onmouseup=()=>{down=null;};
+}
+function setGsel(a,b){S.gsel={r0:Math.min(a[0],b[0]),c0:Math.min(a[1],b[1]),r1:Math.max(a[0],b[0]),c1:Math.max(a[1],b[1])};
+  $$("#gridWrap td[data-r]").forEach(td=>{const r=+td.dataset.r,c=+td.dataset.c;td.classList.toggle("on",r>=S.gsel.r0&&r<=S.gsel.r1&&c>=S.gsel.c0&&c<=S.gsel.c1);});
+  const n=(S.gsel.r1-S.gsel.r0+1)*(S.gsel.c1-S.gsel.c0+1);
+  const col=i=>{let s="";i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26);}return s;};
+  $("#inSel").textContent=S.grid.kind==="xlsx"?`${S.grid.sheet}!${col(S.gsel.c0)}${S.gsel.r0+1}`+(n>1?`:${col(S.gsel.c1)}${S.gsel.r1+1} (${n}칸)`:""):`${S.grid.sheet} ${S.gsel.r0+1}행 ${S.gsel.c0+1}열`+(n>1?` 외 (${n}칸)`:"");}
+async function doInput(){
+  if(!S.inTarget){toast("왼쪽 문서에서 넣을 칸을 먼저 누르세요",true);return;}
+  if(!S.gsel){toast("오른쪽 원본에서 셀을 고르세요",true);return;}
+  const dec=$("#inDec").value;
+  const r=await api("/api/input",{sid:S.grid.sid,sheet:S.grid.sheet,...S.gsel,slot:S.inTarget,dec:dec===""?null:+dec,scale:+$("#inScale").value,comma:$("#inComma").checked});
+  toast((r.count?`${r.count}칸을 대기 목록에 올렸습니다`:"")+(r.same?` 값이 이미 같은 ${r.same}칸은 출처만 확정해 기록했습니다`:"")+(r.skipped.length?` (건너뜀 ${r.skipped.length})`:""));
+  S.view=await api("/api/view");await refresh();renderDocInto($("#docView2"),"input");
+}
+
+/* 이력 */
+async function loadHist(){if(!S.work)return;S.hist=await api("/api/history");renderHist();}
+function renderHist(){
+  const H=S.hist; if(!H)return; const q=$("#hq").value.trim(), hide=$("#hHideInit").checked;
+  const ev=H.events.filter(e=>!(hide&&e.method==="작업본 생성")).filter(e=>!q||[e.slot,e.label,e.source_path,e.source_ref,e.method,e.reason].join(" ").includes(q));
+  $("#histT").innerHTML="<tr><th>시각</th><th>버전</th><th>위치</th><th>이전</th><th>새 값</th><th>방법</th><th>출처</th><th>사유</th><th>작업자</th></tr>"+
+    ev.map(e=>`<tr><td class="small">${esc(e.ts)}</td><td>v${String(e.ver||0).padStart(3,"0")}</td><td>${esc(e.label)}<div class="small muted path">${esc(e.slot)}</div></td><td>${esc(e.old??"")}</td><td><b>${esc(e.new??"")}</b></td><td>${esc(e.method)}</td><td class="small"><span class="path">${esc(e.source_path||"")}</span> ${esc(e.source_ref||"")}</td><td class="small">${esc(e.reason||"")}</td><td>${esc(e.user||"")}</td></tr>`).join("");
+  $("#verT").innerHTML="<tr><th>버전</th><th>만든 시각</th><th>메모</th><th>작업자</th><th>파일</th><th></th></tr>"+H.versions.map(v=>`<tr><td>v${String(v.ver).padStart(3,"0")}</td><td>${esc(v.created)}</td><td>${esc(v.note)}</td><td>${esc(v.user)}</td><td class="path small">${esc(v.path)}</td><td><button class="sm" onclick='api("/api/open",{path:${JSON.stringify(v.path)}})'>한글로 열기</button></td></tr>`).join("");
+  $("#srcEvT").innerHTML="<tr><th>시각</th><th>번호</th><th>파일</th><th>내용</th><th>고유값 변화</th><th>비고</th></tr>"+H.source_events.map(e=>`<tr><td class="small">${esc(e.ts)}</td><td>${esc(e.sid)}</td><td>${esc(e.name)}</td><td>${esc(e.kind)}</td><td class="path small">${esc((e.old_sha||"").slice(0,10))}${e.old_sha?" → ":""}${esc((e.new_sha||"").slice(0,10))}</td><td class="small path">${esc(e.note||"")}</td></tr>`).join("");
+  $("#runT").innerHTML="<tr><th>시각</th><th>버전</th><th>결과</th></tr>"+H.runs.map(r=>{const s=JSON.parse(r.summary||"{}");return `<tr><td>${esc(r.ts)}</td><td>v${String(r.ver).padStart(3,"0")}</td><td class="small">전체 ${s.total||0} · 일치 ${(s.ok||0)+(s.ok_calc||0)+(s.ok_user||0)+(s.single||0)} · 불일치·오류 ${(s.mismatch||0)+(s.unit||0)+(s.calc||0)} · 확인 필요 ${(s.conflict||0)+(s.unknown||0)+(s.multi||0)}${s.changed?` · 바뀐 칸 ${s.changed}`:""}</td></tr>`}).join("");
+}
+
+/* 설정 */
+async function loadConf(){await refresh();const c=S.state.clip;$("#uname").value=S.work?S.work.user:"";
+  $("#clipBtn").textContent=c.running?"끄기":"켜기"; $("#clipBtn").disabled=!c.available;
+  $("#clipSt").textContent=!c.available?"이 PC(Windows가 아님)에서는 사용할 수 없습니다":c.running?`기록 중 · ${c.count}건`:"꺼짐";
+  if(S.work){const j=await api("/api/clips");$("#clipT").innerHTML="<tr><th>시각</th><th>파일</th><th>시트·시작 칸</th><th>칸 수</th></tr>"+j.clips.map(x=>`<tr><td class="small">${esc(x.ts)}</td><td class="path small">${esc(x.path)}</td><td>${esc(x.sheet)} R${x.r0+1}C${x.c0+1}</td><td>${Object.keys(x.cells).length}</td></tr>`).join("");}}
+async function setUser(){S.work=await api("/api/user",{name:$("#uname").value});await refresh();toast("저장했습니다");}
+async function toggleClip(){const on=!S.state.clip.running;const r=await api("/api/clip",{on});if(on&&!r.ok)toast(r.error||"켤 수 없습니다",true);loadConf();}
+async function quit(){if(!await ask("종료","숫자지기를 종료합니다. (저장하지 않은 변경은 대기 목록에 남아 다음에 이어서 할 수 있습니다)"))return;await api("/api/shutdown",{});document.body.innerHTML='<div class="empty" style="padding:80px">종료했습니다. 이 창을 닫으세요.</div>';}
+
+refresh().then(()=>{ if(S.work&&S.work.version) toast("최근 작업을 열었습니다: "+S.work.target_name); });
+</script>
+</body>
+</html>
