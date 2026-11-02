@@ -26,3 +26,6 @@ $RECYCLE.BIN/
 
 # Office 임시 파일 (문서를 열어 둔 동안 생성)
 ~$*
+
+# HWPX 비교기: 함께 넣어 쓰는 설치 파일(크고 PC마다 다름)
+**/vendor/*.whl
