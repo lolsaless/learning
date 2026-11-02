@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HWPX 변경이력 비교기</title>
+<!-- 화면 틀만 둔다. 디자인은 css/, 동작은 js/ (js/main.js 에서 시작) -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/diff.css">
+<link rel="stylesheet" href="css/docview-ui.css">
+<link rel="stylesheet" href="css/v2.css"><!-- (v2.0) 프로젝트·관계도·병합·고치기·대화창 -->
+<link rel="stylesheet" href="/api/docview.css"><!-- 문서 모양(종이·바뀐 곳 색): hwpxdiff/render/docview.css -->
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">⇄</span>
+    <div>
+      <h1>HWPX 변경이력 비교기</h1>
+      <div class="sub">여러 버전 비교 · 관계도 · 병합 · 직접 고치기 · 이력 관리 <span id="appVersion"></span></div>
+    </div>
+  </div>
+  <div id="projBar" class="proj-bar"></div>
+  <div class="top-actions">
+    <span id="hangulState" class="pill" title="한글 프로그램 연동 상태"></span>
+    <span id="serverState" class="pill pill-wait">연결 중…</span>
+    <div class="menu">
+      <button id="btnExport" class="btn" aria-haspopup="true">보고서 저장 ▾</button>
+      <div id="exportMenu" class="menu-list" hidden>
+        <button data-export="doc:html">문서 모양 + 바뀐 곳 표시 — HTML</button>
+        <button data-export="compare:html">현재 두 버전 비교 — HTML</button>
+        <button data-export="compare:csv">현재 두 버전 비교 — CSV(엑셀)</button>
+        <button data-export="history:html">전체 이력 — HTML</button>
+        <button data-export="history:csv">전체 이력 — CSV(엑셀)</button>
+        <label class="menu-check"><input type="checkbox" id="chkSaveReport" checked> 프로젝트 5_보고서 폴더에도 저장</label>
+      </div>
+    </div>
+    <button id="btnShutdown" class="btn btn-ghost" title="파이썬 서버 종료">종료</button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ───────────── 왼쪽: 파일·순서·옵션·작업 상황 ───────────── -->
+  <aside class="side">
+    <section class="panel">
+      <h2><span class="step">1</span> 파일 넣기</h2>
+      <div id="dropZone" class="drop" tabindex="0">
+        <div class="drop-icon" aria-hidden="true">⬇</div>
+        <div><b>HWPX 파일이나 폴더</b>를 여기로 끌어 놓으세요</div>
+        <div class="muted">원본 지정 없이 넣은 순서와 상관없이 문서 수정일 순으로 정렬됩니다</div>
+      </div>
+      <div class="row gap">
+        <button id="btnPickFiles" class="btn">파일 선택</button>
+        <button id="btnPickFolder" class="btn">폴더 선택</button>
+        <input id="inpFiles" type="file" accept=".hwpx" multiple hidden>
+        <input id="inpFolder" type="file" webkitdirectory directory multiple hidden>
+      </div>
+      <details class="path-box">
+        <summary>폴더 경로로 읽기 (파이썬이 직접 읽음)</summary>
+        <div class="row gap">
+          <input id="inpPath" type="text" placeholder="예) D:\감사자료\2026">
+          <button id="btnScanPath" class="btn">읽기</button>
+        </div>
+        <label class="check"><input id="chkRecursive" type="checkbox"> 하위 폴더까지</label>
+      </details>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2><span class="step">2</span> 버전 순서</h2>
+        <div class="seg" role="group" aria-label="정렬 기준">
+          <button data-order="modified" class="on">수정일 순</button>
+          <button data-order="name">이름 순</button>
+        </div>
+      </div>
+      <ol id="fileList" class="files"></ol>
+      <div id="fileEmpty" class="empty">아직 넣은 파일이 없습니다</div>
+      <div class="row between">
+        <span id="orderHint" class="muted"></span>
+        <button id="btnReset" class="btn btn-ghost btn-sm">모두 비우기</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2><span class="step">3</span> 비교 옵션</h2>
+      <div id="optionsBox" class="options"></div>
+    </section>
+
+    <section class="panel">
+      <h2>작업 상황</h2>
+      <div class="progress"><div id="progBar" class="progress-bar"></div></div>
+      <div id="progText" class="muted">대기 중</div>
+      <ul id="logList" class="logs" aria-live="polite"></ul>
+    </section>
+  </aside>
+
+  <!-- ───────────── 오른쪽: 결과 ───────────── -->
+  <main class="main">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="summary" class="on">요약</button>
+      <button role="tab" data-tab="graph">관계도</button>
+      <button role="tab" data-tab="doc">문서 보기·고치기</button>
+      <button role="tab" data-tab="merge">병합</button>
+      <button role="tab" data-tab="compare">두 버전 비교</button>
+      <button role="tab" data-tab="history">이력 추적표</button>
+      <button role="tab" data-tab="info">문서 정보</button>
+    </nav>
+    <section id="tab-summary" class="tab-body"></section>
+    <section id="tab-graph" class="tab-body" hidden></section>
+    <section id="tab-doc" class="tab-body" hidden></section>
+    <section id="tab-merge" class="tab-body" hidden></section>
+    <section id="tab-compare" class="tab-body" hidden></section>
+    <section id="tab-history" class="tab-body" hidden></section>
+    <section id="tab-info" class="tab-body" hidden></section>
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<div id="modal" class="modal" hidden><div class="modal-box" role="dialog" aria-modal="true"></div></div>
+<div id="popover" class="popover" hidden></div>
+<div id="offline" class="offline" hidden>
+  <div><b>파이썬 서버와 연결이 끊겼습니다.</b><br>HWPX비교기.py 를 다시 실행한 뒤 이 창을 새로고침하세요.</div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

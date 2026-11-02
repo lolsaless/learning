@@ -1,0 +1,39 @@
+/* 화면 배치: 상단 막대 / 왼쪽 패널 / 오른쪽 결과 */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.logo {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px;
+  background: var(--accent); color: #fff; font-size: 18px; font-weight: 700;
+}
+.sub { color: var(--muted); font-size: 12px; }
+.top-actions { display: flex; align-items: center; gap: 8px; }
+
+.layout {
+  display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px;
+  padding: 16px 20px; align-items: start;
+}
+.side { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 72px;
+        max-height: calc(100vh - 88px); overflow-y: auto; padding-right: 2px; }
+.main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+}
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.row { display: flex; align-items: center; }
+.row.gap { gap: 8px; }
+.row.between { justify-content: space-between; }
+.row.wrap { flex-wrap: wrap; }
+
+.tab-body { display: flex; flex-direction: column; gap: 12px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 12px 16px; }
+  .side { position: static; max-height: none; }
+  .topbar { padding: 10px 16px; flex-wrap: wrap; }
+}
