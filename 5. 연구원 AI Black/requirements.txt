@@ -1,0 +1,13 @@
+# 연구원 AI Black 과정에서 쓰는 파이썬 라이브러리 목록
+# 설치: 가상환경을 켠 뒤  pip install -r requirements.txt
+# 단계가 진행되면서 필요한 라이브러리를 이 파일에 추가합니다.
+
+# 2단계 — 노트북 실행
+ipykernel
+
+# 4단계 — 표 데이터, 엑셀
+pandas
+openpyxl
+
+# 5단계 — 그래프
+matplotlib
