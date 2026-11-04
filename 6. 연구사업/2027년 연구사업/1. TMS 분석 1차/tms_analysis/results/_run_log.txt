@@ -1,0 +1,71 @@
+
+===== 2026-11-04 11:11:09 01_preprocess.py OK 14s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/01_preprocess/summary.md
+
+===== 2026-11-04 11:11:39 02_data_quality.py OK 30s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/02_data_quality/summary.md
+
+===== 2026-11-04 11:12:00 03_descriptive_stats.py OK 21s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/03_descriptive_stats/summary.md
+
+===== 2026-11-04 11:12:20 04_flow_analysis.py OK 20s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/04_flow_analysis/summary.md
+
+===== 2026-11-04 11:12:34 05_compliance_margin.py OK 14s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/05_compliance_margin/summary.md
+
+===== 2026-11-04 11:14:17 06_seasonality_stl.py OK 104s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/06_seasonality_stl/summary.md
+
+===== 2026-11-04 11:14:38 07_weekday_holiday.py OK 20s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/07_weekday_holiday/summary.md
+
+===== 2026-11-04 11:14:52 08_trend_mannkendall.py OK 14s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/08_trend_mannkendall/summary.md
+
+===== 2026-11-04 11:15:20 09_changepoint.py OK 29s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/09_changepoint/summary.md
+
+===== 2026-11-04 11:18:17 10_anomaly_detection.py OK 177s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/10_anomaly_detection/summary.md
+
+===== 2026-11-04 11:18:50 11_param_correlation_cq.py OK 33s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/11_param_correlation_cq/summary.md
+
+===== 2026-11-04 11:18:57 12_cross_site_sync.py ERROR(1) 7s =====
+
+[stderr]
+Traceback (most recent call last):
+  File "/Users/mac/Documents/GitHub/tms_analysis/12_cross_site_sync.py", line 116, in <module>
+    main()
+  File "/Users/mac/Documents/GitHub/tms_analysis/12_cross_site_sync.py", line 47, in main
+    np.fill_diagonal(R.values, 1)
+  File "/Users/mac/Documents/GitHub/.venv_intel3.12/lib/python3.12/site-packages/numpy/lib/_index_tricks_impl.py", line 944, in fill_diagonal
+    a.flat[:end:step] = val
+    ~~~~~~^^^^^^^^^^^
+ValueError: underlying array is read-only
+
+===== 2026-11-04 11:19:29 13_typology_clustering.py OK 31s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/13_typology_clustering/summary.md
+
+===== 2026-11-04 11:20:36 14_shape_clustering.py OK 67s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/14_shape_clustering/summary.md
+
+===== 2026-11-04 11:20:59 15_autocorr_spectral.py OK 23s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/15_autocorr_spectral/summary.md
+
+===== 2026-11-04 11:21:06 16_load_contribution.py OK 7s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/16_load_contribution/summary.md
+
+===== 2026-11-04 11:21:17 17_multi_outlet.py OK 11s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/17_multi_outlet/summary.md
+
+===== 2026-11-04 11:24:14 18_extreme_value.py OK 178s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/18_extreme_value/summary.md
+
+===== 2026-11-04 11:24:45 19_lead_lag_granger.py OK 30s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/19_lead_lag_granger/summary.md
+
+===== 2026-11-04 11:24:48 20_build_digest.py OK 4s =====
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results/00_DIGEST_for_Claude.md
+[완료] /Users/mac/Documents/GitHub/tms_analysis/results_for_claude.zip  (5.2 MB)
